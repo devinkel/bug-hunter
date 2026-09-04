@@ -1,0 +1,2128 @@
+:root {
+  --font-bujo: 'Patrick Hand', 'Caveat', -apple-system, BlinkMacSystemFont, "Segoe UI", cursive, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bujo-ink: #2e2823;
+  --bujo-ink-muted: #5c4e43;
+  --bujo-paper: #faf7f0;
+  --bujo-paper-card: #fcfbf7;
+  --bujo-border: #2e2823;
+  --bujo-blue: #0284c7;
+  --bujo-blue-dark: #0369a1;
+  --bujo-green: #16a34a;
+  --bujo-amber: #d97706;
+  --bujo-red: #e11d48;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   ESTILO BULLET JOURNAL (PAPEL PONTILHADO / DOT GRID)
+   ========================================================================== */
+body {
+  font-family: var(--font-sans);
+  background-color: #f7f4eb;
+  background-image: radial-gradient(circle, #beb5a5 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  background-position: 12px 12px;
+  color: #2e2823;
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  width: 100dvw;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+/* Ícones Vetoriais Padronizados */
+.ui-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.ui-icon-inline {
+  width: 16px;
+  height: 16px;
+  margin-right: 0.35rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.icon-home {
+  color: #615346;
+}
+
+.icon-timer {
+  color: #0284c7;
+}
+
+.round-badge.chaos .icon-timer {
+  color: #b91c1c;
+}
+
+.icon-bug-sm {
+  color: #16a34a;
+}
+
+.crown-svg {
+  width: 12px;
+  height: 12px;
+  min-width: 12px;
+  max-width: 12px;
+  min-height: 12px;
+  max-height: 12px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  margin-left: 3px;
+  display: inline-block;
+}
+
+/* ==========================================================================
+   BARRA SUPERIOR (TOP-BAR) • ESTILO BULLET JOURNAL
+   ========================================================================== */
+.top-bar {
+  position: absolute;
+  top: max(0.6rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background-color: var(--bujo-paper-card);
+  background-image: radial-gradient(circle, rgba(168, 150, 134, 0.3) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: 8px 8px;
+  padding: 0.28rem 0.75rem;
+  border-radius: 9999px;
+  border: 2px solid var(--bujo-border);
+  box-shadow: 0 4px 14px rgba(46, 40, 35, 0.15), 2px 2px 0px var(--bujo-border);
+  z-index: 2000;
+  max-width: calc(100vw - 1.2rem);
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Durante a rodada rolando: A top-bar some completamente para não atrapalhar o jogo */
+body.round-playing .top-bar {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-150%);
+  display: none !important;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(46, 40, 35, 0.3);
+  border-right: 1px dashed rgba(168, 150, 134, 0.7);
+  flex-shrink: 0;
+}
+
+/* 1. Indicador da Sala Atual (Carimbo de Aba BuJo) */
+.room-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #2e2823;
+  cursor: pointer;
+  padding: 0.15rem 0.45rem 0.15rem 0.35rem;
+  border-radius: 9999px;
+  background: #ede6d8;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.room-badge:hover,
+.room-badge:active {
+  background: #e2d7c3;
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
+.room-name {
+  font-family: var(--font-mono);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.room-count {
+  background: #0284c7;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  padding: 0.06rem 0.35rem;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+  font-weight: 800;
+}
+
+/* 2. Indicador de Rodada & Cronômetro BuJo (SEMPRE VISÍVEL) */
+.round-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #2e2823;
+  padding-left: 0.1rem;
+  flex-shrink: 0;
+}
+
+.round-text {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: #2e2823;
+  white-space: nowrap;
+}
+
+.round-badge.chaos .round-text {
+  color: #b91c1c;
+}
+
+.round-timer {
+  background: #0284c7;
+  color: #ffffff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 7px;
+  border: 1.5px solid #1e293b;
+  box-shadow: 1px 1px 0px #1e293b;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  min-width: 26px;
+  text-align: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.round-timer.urgent {
+  background: #e11d48;
+  border-color: #991b1b;
+  box-shadow: 1px 1px 0px #991b1b;
+  animation: pulseTimer 0.5s ease infinite alternate;
+}
+
+.round-timer.paused {
+  background: #d97706;
+  border-color: #92400e;
+  box-shadow: 1px 1px 0px #92400e;
+}
+
+@keyframes pulseTimer {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+/* 3. Perfil do Jogador (Tinta de Caneta + Nome no Caderno) */
+.user-customization {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #ede6d8;
+  padding: 0.12rem 0.45rem 0.12rem 0.25rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  flex-shrink: 0;
+}
+
+.color-picker-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+
+.color-picker-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.color-swatch {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background-color: #0284c7;
+  border: 2px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  transition: transform 0.2s;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.color-swatch:hover,
+.color-swatch:active {
+  transform: scale(1.18);
+}
+
+.name-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px dashed #8c7c6d;
+  outline: none;
+  color: #1e1b18;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  width: 60px;
+  padding: 0 0 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  touch-action: manipulation;
+}
+
+.name-input:focus {
+  border-bottom: 1.5px solid #0284c7;
+}
+
+.name-input::placeholder {
+  color: #a89686;
+  font-weight: 500;
+}
+
+/* 4. Controles do Admin Master (Carimbos de Ação) */
+.admin-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+}
+
+.admin-controls.hidden {
+  display: none !important;
+}
+
+.btn-admin-icon {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1.5px 1.5px 0px var(--bujo-border);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.btn-admin-icon:hover {
+  background: #fde68a;
+  transform: translate(1px, 1px);
+  box-shadow: 0.5px 0.5px 0px var(--bujo-border);
+}
+
+.btn-admin-icon:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
+.btn-icon-subtle {
+  background: #ede6d8;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #2e2823;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.btn-icon-subtle:hover {
+  background: #e2d7c3;
+  transform: translate(0.5px, 0.5px);
+}
+
+.btn-icon-subtle:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
+/* Botão Flutuante de Pausa Rápida para o Admin (Carimbo de Cera Âmbar) */
+.admin-quick-pause {
+  position: absolute;
+  top: max(0.55rem, env(safe-area-inset-top));
+  left: max(0.55rem, env(safe-area-inset-left));
+  z-index: 2100;
+  background: #fef3c7;
+  color: #92400e;
+  border: 2px solid var(--bujo-border);
+  box-shadow: 2.5px 2.5px 0px var(--bujo-border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  animation: bannerPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-quick-pause:hover {
+  background: #fde68a;
+  transform: translate(1px, 1px);
+  box-shadow: 1.5px 1.5px 0px var(--bujo-border);
+}
+
+.admin-quick-pause:active {
+  transform: translate(2.5px, 2.5px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
+.admin-quick-pause.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   ELEMENTOS GERAIS BULLET JOURNAL & WASHI TAPE
+   ========================================================================== */
+.bujo-washi-tape {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1.2deg);
+  width: 140px;
+  height: 28px;
+  background: rgba(245, 232, 205, 0.9);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(217, 185, 145, 0.45),
+    rgba(217, 185, 145, 0.45) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-left: 2px dashed rgba(168, 150, 134, 0.7);
+  border-right: 2px dashed rgba(168, 150, 134, 0.7);
+  box-shadow: 0 2px 6px rgba(46, 40, 35, 0.15);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.bujo-washi-tape.washi-red {
+  background: rgba(254, 226, 226, 0.92);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(248, 113, 113, 0.4),
+    rgba(248, 113, 113, 0.4) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-left-color: rgba(225, 29, 72, 0.6);
+  border-right-color: rgba(225, 29, 72, 0.6);
+}
+
+.bujo-washi-tape.washi-amber {
+  background: rgba(254, 243, 199, 0.92);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(245, 158, 11, 0.4),
+    rgba(245, 158, 11, 0.4) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-left-color: rgba(217, 119, 6, 0.6);
+  border-right-color: rgba(217, 119, 6, 0.6);
+}
+
+.bujo-washi-tape.washi-gold {
+  background: rgba(254, 240, 138, 0.94);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(202, 138, 4, 0.38),
+    rgba(202, 138, 4, 0.38) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-left-color: rgba(202, 138, 4, 0.6);
+  border-right-color: rgba(202, 138, 4, 0.6);
+}
+
+.bujo-washi-tape.washi-sticky {
+  top: -12px;
+  width: 110px;
+  height: 24px;
+}
+
+/* Header / Tag de Página BuJo */
+.bujo-top-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.bujo-page-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #5c4e43;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px dashed rgba(168, 150, 134, 0.75);
+  padding: 0.18rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(46, 40, 35, 0.06);
+}
+
+.bujo-tag-bullet {
+  color: #d97706;
+  font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   MODAIS COM ESTILO CADERNO / BULLET JOURNAL (NOTEBOOK CARDS)
+   ========================================================================== */
+.lobby-overlay,
+.room-full-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(46, 40, 35, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2600;
+  padding: 1rem;
+  box-sizing: border-box;
+  transition: opacity 0.3s ease;
+}
+
+.lobby-overlay.hidden,
+.room-full-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+.lobby-card.bujo-notebook-card,
+.room-full-card.bujo-notebook-card,
+.pause-card.bujo-notebook-card,
+.victory-card.bujo-notebook-card {
+  position: relative;
+  background-color: #faf8f5;
+  background-image: radial-gradient(circle, rgba(168, 150, 134, 0.32) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+  border: 2.5px solid var(--bujo-border);
+  border-radius: 20px;
+  box-shadow: 
+    0 22px 50px rgba(46, 40, 35, 0.35),
+    0 4px 12px rgba(46, 40, 35, 0.15),
+    4px 5px 0px rgba(46, 40, 35, 0.85);
+  padding: 2.1rem 2.2rem 1.4rem 2.2rem;
+  text-align: center;
+  animation: victoryPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 440px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Margem vermelha clássica de caderno à esquerda */
+.bujo-notebook-card::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 20px;
+  width: 1.5px;
+  background: rgba(225, 29, 72, 0.22);
+  pointer-events: none;
+}
+
+/* Ícone de Destaque / Carimbo BuJo */
+.bujo-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.bujo-stamp-badge {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px dashed #0284c7;
+  box-shadow: 2.5px 2.5px 0px #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.bujo-stamp-badge.alert-stamp {
+  border-color: #e11d48;
+  box-shadow: 2.5px 2.5px 0px #e11d48;
+}
+
+.bujo-stamp-badge.pause-stamp {
+  border-color: #d97706;
+  box-shadow: 2.5px 2.5px 0px #d97706;
+}
+
+.bujo-stamp-badge.trophy-stamp {
+  border-color: #d97706;
+  box-shadow: 2.5px 2.5px 0px #d97706;
+  background: #fef3c7;
+}
+
+.bujo-bug-svg {
+  width: 36px;
+  height: 36px;
+  stroke: #0284c7;
+  animation: trophyBounce 0.9s ease-in-out infinite alternate;
+}
+
+.bujo-doodle-sparkle {
+  position: absolute;
+  font-size: 0.9rem;
+  color: #8c7c6d;
+  pointer-events: none;
+  font-family: var(--font-bujo);
+  user-select: none;
+}
+
+.bujo-doodle-sparkle.d-1 {
+  top: -4px;
+  left: -18px;
+  color: #d97706;
+  font-size: 1.15rem;
+}
+
+.bujo-doodle-sparkle.d-2 {
+  top: -6px;
+  right: -18px;
+  color: #0284c7;
+  font-size: 1.25rem;
+  transform: rotate(15deg);
+}
+
+.bujo-doodle-sparkle.d-3 {
+  bottom: 0px;
+  right: -22px;
+  color: #16a34a;
+  font-size: 1.05rem;
+}
+
+/* Título Principal & Efeito Marca-Texto (Mildliner) */
+.bujo-main-title {
+  font-family: var(--font-sans);
+  font-size: 2.05rem;
+  font-weight: 800;
+  color: #1e1b18;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+
+.bujo-card-title {
+  font-family: var(--font-sans);
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #1e1b18;
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+
+.bujo-highlight-marker {
+  position: relative;
+  display: inline-block;
+  padding: 0.12rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(254, 240, 138, 0.88);
+  box-shadow: 0 1px 2px rgba(254, 240, 138, 0.3);
+}
+
+.bujo-highlight-marker.marker-red {
+  background: rgba(254, 205, 211, 0.9);
+}
+
+.bujo-highlight-marker.marker-amber {
+  background: rgba(254, 243, 199, 0.9);
+}
+
+/* Subtítulo Estilo Nota de Caderno */
+.bujo-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #4a3e35;
+  margin-bottom: 1.2rem;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.bujo-key-bullet {
+  color: #0284c7;
+  font-size: 0.8rem;
+}
+
+.bujo-cap-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #5c4e43;
+  background: #ede6d8;
+  padding: 0.12rem 0.48rem;
+  border-radius: 6px;
+  border: 1px solid #c8bcab;
+  white-space: nowrap;
+}
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ==========================================================================
+   BOTÕES FÍSICOS & CARIMBADOS (STAMP & STATIONERY BUTTONS)
+   ========================================================================== */
+.btn {
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  user-select: none;
+}
+
+.btn-large {
+  padding: 0.75rem 1.4rem;
+  width: 100%;
+}
+
+.bujo-btn-stamp {
+  position: relative;
+  background: #0284c7;
+  color: #ffffff;
+  border: 2px solid #1e293b;
+  box-shadow: 3px 3px 0px #1e293b;
+  border-radius: 14px;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  padding: 0.78rem 1.4rem;
+}
+
+.bujo-btn-stamp:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0px #1e293b;
+  background: #0369a1;
+}
+
+.bujo-btn-stamp:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px #1e293b;
+}
+
+.bujo-btn-subtag {
+  position: absolute;
+  top: -9px;
+  right: -6px;
+  background: #fef08a;
+  color: #854d0e;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.08rem 0.38rem;
+  border: 1.5px solid #854d0e;
+  border-radius: 5px;
+  transform: rotate(8deg);
+  box-shadow: 1px 1px 0px #854d0e;
+  pointer-events: none;
+}
+
+.bujo-btn-secondary {
+  background: #ede6d8;
+  color: #2e2823;
+  border: 2px solid #2e2823;
+  box-shadow: 2.5px 2.5px 0px #2e2823;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 0.65rem 1.2rem;
+}
+
+.bujo-btn-secondary:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1.5px 1.5px 0px #2e2823;
+  background: #e2d7c3;
+}
+
+.bujo-btn-secondary:active {
+  transform: translate(2.5px, 2.5px);
+  box-shadow: 0px 0px 0px #2e2823;
+}
+
+.bujo-btn-resume {
+  background: #16a34a;
+  color: #ffffff;
+  border: 2px solid #14532d;
+  box-shadow: 3px 3px 0px #14532d;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 0.65rem 1.4rem;
+}
+
+.bujo-btn-resume:hover {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 1.5px 1.5px 0px #14532d;
+  background: #15803d;
+}
+
+.bujo-btn-resume:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px #14532d;
+}
+
+/* Divisor BuJo */
+.bujo-divider {
+  position: relative;
+  text-align: center;
+  margin: 0.4rem 0;
+}
+
+.bujo-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed #b8a898;
+}
+
+.bujo-divider span {
+  position: relative;
+  background: #fcfbf7;
+  padding: 0.12rem 0.8rem;
+  font-size: 0.72rem;
+  color: #6b5c4f;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border: 1px dashed rgba(168, 150, 134, 0.7);
+  border-radius: 9999px;
+}
+
+/* Formulário e Entrada com Caixa de Escrita BuJo */
+.bujo-join-form {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: stretch;
+}
+
+.bujo-input-container {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: #ffffff;
+  border: 2px dashed #8c7c6d;
+  border-radius: 12px;
+  padding: 0 0.75rem;
+  transition: all 0.2s ease;
+  box-shadow: inset 1px 1px 3px rgba(46, 40, 35, 0.06);
+  min-width: 0;
+}
+
+.bujo-input-container:focus-within {
+  border: 2px solid #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #ffffff;
+}
+
+.bujo-input-icon {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0284c7;
+  margin-right: 0.4rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.bujo-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e1b18;
+  padding: 0.65rem 0;
+  min-width: 0;
+}
+
+.bujo-input::placeholder {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #8c7c6d;
+}
+
+/* ==========================================================================
+   SEÇÃO DE SALAS ABERTAS (LOG DE SALAS DO CADERNO)
+   ========================================================================== */
+.bujo-rooms-section {
+  margin-top: 0.5rem;
+  padding-top: 0.7rem;
+  border-top: 2px dashed #d6cdc0;
+  text-align: left;
+}
+
+.bujo-rooms-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.bujo-rooms-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #4a3e35;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bujo-key-circle {
+  color: #0284c7;
+  font-size: 0.85rem;
+}
+
+.bujo-refresh-btn {
+  background: #ede6d8;
+  border: 1.5px solid #5c4e43;
+  box-shadow: 1.5px 1.5px 0px #5c4e43;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #2e2823;
+  transition: all 0.15s ease;
+}
+
+.bujo-refresh-btn:hover {
+  transform: scale(1.1);
+  background: #e2d7c3;
+}
+
+.bujo-refresh-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px #5c4e43;
+}
+
+.bujo-rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 140px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 2px;
+}
+
+.lobby-room-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 2px solid #3c342a;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0px #3c342a;
+  padding: 0.45rem 0.65rem;
+  transition: all 0.15s ease;
+}
+
+.lobby-room-item:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #3c342a;
+}
+
+.lobby-room-item.full {
+  opacity: 0.65;
+  background: #f7f4eb;
+}
+
+.lobby-room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.lobby-room-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #2e2823;
+}
+
+.bujo-room-bullet {
+  color: #0284c7;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.bujo-room-code {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1e1b18;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 125px;
+}
+
+.bujo-room-meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #5c4e43;
+}
+
+.room-status-badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 0.08rem 0.4rem;
+  border-radius: 5px;
+  text-transform: uppercase;
+}
+
+.room-status-badge.open {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #16a34a;
+}
+
+.room-status-badge.full {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #e11d48;
+}
+
+.btn-sm.bujo-btn-stamp {
+  padding: 0.28rem 0.75rem;
+  font-size: 0.88rem;
+  min-height: 28px;
+  border-radius: 9px;
+  box-shadow: 2px 2px 0px #1e293b;
+}
+
+.btn-sm.bujo-btn-secondary {
+  padding: 0.28rem 0.75rem;
+  font-size: 0.88rem;
+  min-height: 28px;
+  border-radius: 9px;
+  box-shadow: 2px 2px 0px #2e2823;
+}
+
+.btn-sm.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.lobby-rooms-loading,
+.lobby-rooms-empty {
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4a3e35;
+  padding: 0.75rem 0.5rem;
+  line-height: 1.45;
+}
+
+.lobby-rooms-empty small {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b5c4f;
+}
+
+.bujo-empty-icon,
+.bujo-spin-dot {
+  display: inline-block;
+  font-size: 1.1rem;
+  color: #0284c7;
+  margin-right: 0.25rem;
+}
+
+/* Rodapé do Caderno */
+.bujo-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.8rem;
+  padding-top: 0.5rem;
+  border-top: 1px dotted #c8bcab;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #8c7c6d;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+/* ==========================================================================
+   PLACAR DE BUGS (LEADERBOARD) • ESTILO BULLET JOURNAL
+   ========================================================================== */
+.scoreboard-widget {
+  position: absolute;
+  top: max(0.8rem, env(safe-area-inset-top));
+  right: max(1.2rem, env(safe-area-inset-right));
+  background-color: var(--bujo-paper-card);
+  background-image: radial-gradient(circle, rgba(168, 150, 134, 0.3) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: 8px 8px;
+  border: 2px solid var(--bujo-border);
+  border-radius: 14px;
+  padding: 0.45rem 0.65rem;
+  box-shadow: 0 8px 24px rgba(46, 40, 35, 0.16), 2.5px 2.5px 0px var(--bujo-border);
+  z-index: 1600;
+  width: 178px;
+  box-sizing: border-box;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: manipulation;
+}
+
+.scoreboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #2e2823;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1.5px dashed #c8bcab;
+  cursor: pointer;
+  user-select: none;
+}
+
+.scoreboard-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.scoreboard-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #5c4e43;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+  transition: transform 0.2s ease;
+}
+
+.scoreboard-widget.collapsed .scoreboard-toggle-btn {
+  transform: rotate(-90deg);
+}
+
+.scoreboard-widget.collapsed .scoreboard-header {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.scoreboard-widget.collapsed .scoreboard-list {
+  display: none;
+}
+
+.scoreboard-widget.collapsed {
+  min-width: auto;
+  width: auto;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  background: #ede6d8;
+  border: 2px solid var(--bujo-border);
+  box-shadow: 2px 2px 0px var(--bujo-border);
+}
+
+.scoreboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 45vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.scoreboard-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1.5px solid #d6cdc0;
+  box-shadow: 1px 1px 0px rgba(46, 40, 35, 0.08);
+  transition: transform 0.15s ease;
+}
+
+.scoreboard-item.is-me {
+  border: 1.5px solid #d97706;
+  background: rgba(254, 240, 138, 0.4);
+  box-shadow: 1.5px 1.5px 0px #d97706;
+}
+
+.scoreboard-player {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-weight: 700;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.scoreboard-rank {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.rank-gold { color: #d97706; font-weight: 800; }
+.rank-silver { color: #64748b; font-weight: 800; }
+.rank-bronze { color: #b45309; font-weight: 800; }
+.rank-num { color: #786656; font-weight: 700; }
+
+.scoreboard-color {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--bujo-border);
+  flex-shrink: 0;
+}
+
+.player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #1e1b18;
+  flex: 1;
+  min-width: 0;
+}
+
+.scoreboard-score {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #16a34a;
+  padding: 0.06rem 0.38rem;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: 1px 1px 0px #16a34a;
+}
+
+.scoreboard-empty {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #786656;
+  font-style: italic;
+  padding: 0.25rem 0;
+  text-align: center;
+}
+
+/* ==========================================================================
+   MODAL DE GRANDE VENCEDOR (ESTILO BUJO)
+   ========================================================================== */
+.victory-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(46, 40, 35, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  padding: 1rem;
+  box-sizing: border-box;
+  transition: opacity 0.4s ease;
+}
+
+.victory-modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+@keyframes victoryPop {
+  0% { opacity: 0; transform: scale(0.7) translateY(40px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.trophy-wrap {
+  margin-bottom: 0.4rem;
+}
+
+.trophy-svg {
+  width: 36px;
+  height: 36px;
+  animation: trophyBounce 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes trophyBounce {
+  0% { transform: translateY(0) rotate(-4deg); }
+  100% { transform: translateY(-8px) rotate(4deg); }
+}
+
+.bujo-stamp-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 0.2rem 0.75rem;
+  border-radius: 9999px;
+  border: 1.5px dashed #d97706;
+  margin-bottom: 0.5rem;
+}
+
+.bujo-score-badge {
+  display: inline-block;
+  font-family: var(--font-bujo);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 0.25rem 1rem;
+  border: 1.5px solid #16a34a;
+  box-shadow: 2px 2px 0px #16a34a;
+  border-radius: 10px;
+  margin-bottom: 0.9rem;
+}
+
+.bujo-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: #ffffff;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 2px solid #3c342a;
+  box-shadow: 2px 2px 0px #3c342a;
+  margin-bottom: 0.9rem;
+}
+
+.podium-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  background: #faf7f0;
+  border: 1px dashed rgba(168, 150, 134, 0.4);
+}
+
+.podium-player {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.victory-admin-actions {
+  margin-top: 1rem;
+}
+
+.victory-admin-actions.hidden {
+  display: none !important;
+}
+
+.victory-waiting.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   OVERLAY DE JOGO PAUSADO (ESTILO BUJO)
+   ========================================================================== */
+.pause-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(247, 244, 235, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  padding: 1rem;
+  box-sizing: border-box;
+  transition: opacity 0.3s ease;
+}
+
+.pause-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+.pause-icon-svg {
+  width: 32px;
+  height: 32px;
+}
+
+.pause-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.pause-actions.hidden {
+  display: none !important;
+}
+
+.pause-waiting.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   BANNER DE DELAY FIXO DE 6 SEGUNDOS ANTES DA RODADA (ESTILO BUJO)
+   ========================================================================== */
+.round-banner {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--bujo-paper-card);
+  background-image: radial-gradient(circle, rgba(168, 150, 134, 0.32) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+  border: 2.5px solid var(--bujo-border);
+  box-shadow: 
+    0 22px 50px rgba(46, 40, 35, 0.35),
+    0 4px 12px rgba(46, 40, 35, 0.15),
+    4px 5px 0px rgba(46, 40, 35, 0.85);
+  color: #1e1b18;
+  padding: 1.8rem 2.4rem;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 2000;
+  pointer-events: none;
+  animation: roundBannerPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-width: 90vw;
+  width: 390px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.round-banner.hidden {
+  opacity: 0;
+  transform: translate(-50%, -40%) scale(0.85);
+  display: none !important;
+}
+
+.round-banner h2 {
+  font-family: var(--font-sans);
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 0.2rem;
+  color: #1e1b18;
+  letter-spacing: -0.01em;
+}
+
+.round-delay-countdown {
+  font-family: var(--font-mono);
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: #d97706;
+  margin: 0.2rem 0;
+  line-height: 1;
+  animation: pulseTimer 0.6s ease infinite alternate;
+  text-shadow: 2px 2px 0px rgba(217, 119, 6, 0.2);
+}
+
+.round-banner p {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #5c4e43;
+}
+
+@keyframes roundBannerPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ==========================================================================
+   ÁREA DE INTERAÇÃO & CANVAS
+   ========================================================================== */
+#board {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* Instruções de Centro (Sticky Note no Bullet Journal) */
+.center-instructions.bujo-sticky-note {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fefce8;
+  background-image: radial-gradient(circle, #e2d9b6 1.2px, transparent 1.2px);
+  background-size: 18px 18px;
+  border: 2px solid #854d0e;
+  border-radius: 18px;
+  box-shadow: 
+    0 16px 36px rgba(46, 40, 35, 0.14),
+    3px 4px 0px #854d0e;
+  padding: 1.8rem 2rem;
+  max-width: 440px;
+  width: 90vw;
+  text-align: center;
+  pointer-events: auto;
+  z-index: 1000;
+  transition: opacity 0.4s ease;
+  box-sizing: border-box;
+}
+
+.center-instructions.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
+.center-instructions h2 {
+  font-family: var(--font-bujo);
+  font-size: 2rem;
+  color: #2e2823;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.center-instructions p {
+  font-family: var(--font-bujo);
+  font-size: 1.08rem;
+  color: #786656;
+  margin-bottom: 1rem;
+}
+
+.center-admin-start {
+  margin-top: 1rem;
+}
+
+.center-admin-start.hidden {
+  display: none !important;
+}
+
+.center-waiting.hidden {
+  display: none !important;
+}
+
+/* Toast Notification Feedback */
+.toast-notification {
+  position: absolute;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(46, 40, 35, 0.92);
+  color: #f7f4eb;
+  padding: 0.5rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  z-index: 3000;
+  pointer-events: none;
+  animation: toastFadeIn 0.25s ease-out;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+
+.toast-notification.hidden {
+  opacity: 0;
+  display: none;
+}
+
+@keyframes toastFadeIn {
+  0% { opacity: 0; transform: translate(-50%, 15px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ==========================================================================
+   BUGS / INSETOS NO BULLET JOURNAL & BUG DOURADO
+   ========================================================================== */
+#bugs-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  pointer-events: none;
+  z-index: 500;
+  overflow: hidden;
+  touch-action: none;
+}
+
+#bugs-container.paused .bug {
+  pointer-events: none;
+}
+
+#bugs-container.paused .bug-inner {
+  animation-play-state: paused !important;
+}
+
+.bug {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  cursor: pointer;
+  pointer-events: auto;
+  will-change: transform, left, top;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Área de toque expandida para telas touch/mobile */
+.bug::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  right: -14px;
+  bottom: -14px;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+.bug-inner {
+  width: 100%;
+  height: 100%;
+  animation: bugWiggle 0.3s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.bug.crazy .bug-inner {
+  animation: crazyWiggle 0.15s ease-in-out infinite alternate;
+}
+
+.bug-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 3px 5px rgba(78, 64, 50, 0.25));
+  pointer-events: none;
+}
+
+/* Bug Dourado Especial */
+.bug.golden .golden-bug-svg {
+  filter: drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 4px #fbbf24);
+  animation: goldenGlow 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes goldenGlow {
+  0% { filter: drop-shadow(0 0 6px #f59e0b); }
+  100% { filter: drop-shadow(0 0 16px #fbbf24) drop-shadow(0 0 6px #f59e0b); }
+}
+
+@keyframes bugWiggle {
+  0% { transform: rotate(-4deg); }
+  100% { transform: rotate(4deg); }
+}
+
+@keyframes crazyWiggle {
+  0% { transform: rotate(-10deg) scale(1.1); }
+  100% { transform: rotate(10deg) scale(0.95); }
+}
+
+.bug.splatted {
+  pointer-events: none;
+  animation: bugSquish 0.6s ease-out forwards;
+}
+
+@keyframes bugSquish {
+  0% { transform: scale(1.3); opacity: 1; }
+  30% { transform: scale(1.6, 0.4); opacity: 0.9; }
+  100% { transform: scale(0.2) rotate(180deg); opacity: 0; }
+}
+
+.ink-splat {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: splatAnim 0.7s ease-out forwards;
+  z-index: 499;
+}
+
+@keyframes splatAnim {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+.score-popup {
+  position: absolute;
+  pointer-events: none;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #ffffff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%);
+  animation: scoreFloat 0.8s ease-out forwards;
+  z-index: 999;
+  white-space: nowrap;
+}
+
+.score-popup.golden-popup {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.8);
+  font-size: 1.25rem;
+}
+
+@keyframes scoreFloat {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -80%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+}
+
+/* Cursores Remotos */
+.remote-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.03s linear;
+  will-change: transform, opacity;
+}
+
+.remote-cursor.visible {
+  opacity: 1;
+}
+
+.cursor-pointer {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+}
+
+.cursor-label {
+  position: absolute;
+  top: 22px;
+  left: 16px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.3s;
+}
+
+/* Efeito Ripple de Toque / Clique */
+.click-ripple {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: ripple-anim 0.55s ease-out forwards;
+  z-index: 998;
+}
+
+@keyframes ripple-anim {
+  0% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(3.5); }
+}
+
+/* ==========================================================================
+   MEDIA QUERIES (RESPONSIVIDADE MOBILE & TABLET)
+   ========================================================================== */
+
+/* Tablets e Telas Médias (<= 768px) */
+@media (max-width: 768px) {
+  .top-bar {
+    top: max(0.45rem, env(safe-area-inset-top));
+    left: 0.45rem;
+    right: 0.45rem;
+    transform: none;
+    width: auto;
+    max-width: none;
+    padding: 0.25rem 0.45rem;
+    justify-content: space-between;
+    gap: 0.25rem;
+  }
+
+  /* Em telas menores o topo fica limpo durante a rodada */
+
+  .room-badge {
+    padding: 0.12rem 0.38rem;
+    font-size: 0.74rem;
+    gap: 0.2rem;
+  }
+
+  .room-name {
+    max-width: 60px;
+  }
+
+  .room-count {
+    font-size: 0.62rem;
+    padding: 0.04rem 0.25rem;
+  }
+
+  .round-badge {
+    font-size: 0.74rem;
+    gap: 0.2rem;
+  }
+
+  .round-timer {
+    font-size: 0.72rem;
+    padding: 0.08rem 0.35rem;
+    min-width: 24px;
+  }
+
+  .btn-admin-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .btn-icon-subtle {
+    width: 24px;
+    height: 24px;
+  }
+
+  .user-customization {
+    padding: 0.1rem 0.32rem 0.1rem 0.2rem;
+    gap: 0.2rem;
+  }
+
+  .color-swatch {
+    width: 16px;
+    height: 16px;
+  }
+
+  .name-input {
+    width: 48px;
+    font-size: 0.72rem;
+  }
+
+  /* Scoreboard refinado e compacto no mobile */
+  .scoreboard-widget {
+    top: calc(max(0.45rem, env(safe-area-inset-top)) + 44px);
+    right: max(0.45rem, env(safe-area-inset-right));
+    width: 155px;
+    padding: 0.35rem 0.55rem;
+    border-radius: 12px;
+  }
+
+  body.round-playing .scoreboard-widget {
+    top: max(0.45rem, env(safe-area-inset-top));
+    right: max(0.45rem, env(safe-area-inset-right));
+  }
+
+  .scoreboard-player {
+    max-width: 80px;
+  }
+
+  .lobby-card {
+    padding: 1.8rem 1.4rem;
+  }
+}
+
+/* Celulares e Telas Pequenas (<= 480px) */
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 0.2rem 0.35rem;
+    gap: 0.2rem;
+  }
+
+  .room-name {
+    max-width: 45px;
+  }
+
+  .name-input {
+    width: 44px;
+    font-size: 0.72rem;
+  }
+
+  .scoreboard-widget {
+    top: calc(max(0.45rem, env(safe-area-inset-top)) + 40px);
+    right: max(0.4rem, env(safe-area-inset-right));
+    width: 145px;
+    padding: 0.32rem 0.48rem;
+  }
+
+  body.round-playing .scoreboard-widget {
+    top: max(0.45rem, env(safe-area-inset-top));
+    right: max(0.45rem, env(safe-area-inset-right));
+  }
+
+  .scoreboard-item {
+    font-size: 0.7rem;
+    padding: 0.16rem 0.26rem;
+  }
+
+  .scoreboard-player {
+    max-width: 68px;
+    font-size: 0.7rem;
+  }
+
+  .scoreboard-score {
+    font-size: 0.65rem;
+    padding: 0.05rem 0.28rem;
+  }
+
+  /* Modais em celular */
+  .lobby-card.bujo-notebook-card,
+  .room-full-card.bujo-notebook-card,
+  .victory-card.bujo-notebook-card,
+  .pause-card.bujo-notebook-card {
+    padding: 1.6rem 1.2rem 1.1rem 1.2rem;
+    border-radius: 16px;
+    box-shadow: 
+      0 15px 30px rgba(46, 40, 35, 0.3),
+      0 3px 8px rgba(46, 40, 35, 0.12),
+      3px 3px 0px rgba(46, 40, 35, 0.85);
+  }
+
+  .bujo-washi-tape {
+    top: -11px;
+    width: 100px;
+    height: 22px;
+  }
+
+  .bujo-stamp-badge {
+    width: 48px;
+    height: 48px;
+  }
+
+  .bujo-bug-svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .bujo-main-title {
+    font-size: 1.8rem;
+  }
+
+  .bujo-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .bujo-btn-stamp {
+    font-size: 1.1rem;
+    padding: 0.65rem 1rem;
+  }
+
+  .bujo-join-form {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .bujo-input-container,
+  .bujo-btn-secondary {
+    width: 100%;
+  }
+
+  .bujo-btn-secondary {
+    padding: 0.55rem 1rem;
+    font-size: 1.05rem;
+  }
+
+  .victory-card h1 {
+    font-size: 1.6rem;
+  }
+
+  .winner-score-badge {
+    font-size: 0.95rem;
+    padding: 0.25rem 0.8rem;
+  }
+
+  .podium-row {
+    font-size: 0.78rem;
+  }
+
+  .pause-icon-svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pause-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-resume-main,
+  .bujo-btn-resume {
+    width: 100%;
+    text-align: center;
+  }
+
+  .round-banner {
+    padding: 1.2rem 1.5rem;
+  }
+
+  .round-banner h2 {
+    font-size: 1.25rem;
+  }
+
+  .round-delay-countdown {
+    font-size: 2.8rem;
+  }
+
+  .round-banner p {
+    font-size: 0.85rem;
+  }
+
+  .center-instructions.bujo-sticky-note {
+    padding: 1.4rem 1.2rem;
+  }
+
+  .center-instructions h2 {
+    font-size: 1.5rem;
+  }
+
+  .center-instructions p {
+    font-size: 0.95rem;
+  }
+}
+
+/* Celulares ultra estreitos (<= 360px) */
+@media (max-width: 360px) {
+  .room-name {
+    display: none;
+  }
+
+  .name-input {
+    width: 36px;
+  }
+
+  .round-text {
+    display: none;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "webrtc-cursor-sharing",
+  "version": "1.0.0",
+  "description": "Compartilhamento de mouse em tempo real via WebRTC na rede local",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
