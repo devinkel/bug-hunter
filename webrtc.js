@@ -17,9 +17,17 @@
 async function startWebRTC() {
   console.log("🚀 Iniciando fluxo WebRTC...\n");
 
-  // 1. Configuração com servidor STUN público (usado para descobrir IPs públicos na internet)
+  // 1. Configuração com servidores STUN públicos (Google, Cloudflare, Mozilla)
   const configuration = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" },
+      { urls: "stun:stun.cloudflare.com:3478" },
+      { urls: "stun:stun.services.mozilla.com" },
+    ],
   };
 
   // 2. Criação das instâncias dos dois participantes (Peers)
