@@ -21,6 +21,13 @@
 }
 
 /* ==========================================================================
+   UTILITÁRIOS GERAIS
+   ========================================================================== */
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
    ESTILO BULLET JOURNAL (PAPEL PONTILHADO / DOT GRID)
    ========================================================================== */
 body {
@@ -231,6 +238,37 @@ body.round-playing .top-bar {
 @keyframes pulseTimer {
   0% { transform: scale(1); }
   100% { transform: scale(1.15); }
+}
+
+/* Indicador de Reconexão */
+.connection-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #fef3c7;
+  border: 1.5px solid #d97706;
+  border-radius: 9999px;
+  padding: 0.12rem 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #b45309;
+  box-shadow: 1px 1px 0px rgba(217, 119, 6, 0.85);
+  animation: fadeIn 0.2s ease-out;
+  flex-shrink: 0;
+}
+
+.status-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #d97706;
+  animation: statusPulse 1s infinite ease-in-out;
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.3); opacity: 1; }
 }
 
 /* 3. Perfil do Jogador (Tinta de Caneta + Nome no Caderno) */
@@ -1842,6 +1880,36 @@ body.round-playing .top-bar {
   transition: background-color 0.3s;
 }
 
+/* Indicador de Fala (Voice Activity Indicator) */
+.remote-cursor.is-speaking .cursor-pointer {
+  filter: drop-shadow(0 0 6px rgba(2, 132, 199, 0.9)) drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+  animation: speakingCursorPulse 0.45s infinite alternate ease-in-out;
+}
+
+.remote-cursor.is-speaking .cursor-label {
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.9), 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes speakingCursorPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.2); }
+}
+
+.scoreboard-item.is-speaking {
+  background-color: #f0fdf4 !important;
+  border-color: #16a34a !important;
+}
+
+.speaking-indicator-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  margin-left: 4px;
+  animation: statusPulse 0.6s infinite ease-in-out;
+}
+
 /* Efeito Ripple de Toque / Clique */
 .click-ripple {
   position: absolute;
@@ -2112,17 +2180,108 @@ body.round-playing .top-bar {
   }
 }
 
-/* Celulares ultra estreitos (<= 360px) */
-@media (max-width: 360px) {
-  .room-name {
-    display: none;
+/* ==========================================================================
+   PAINEL DE CONTROLES DE AUDIO (CANTO ESQUERDO)
+   ========================================================================== */
+.audio-controls-panel {
+  position: fixed;
+  bottom: max(0.85rem, env(safe-area-inset-bottom));
+  left: max(0.85rem, env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.audio-control-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background-color: #fdfbf7;
+  border: 1.5px solid #2e2823;
+  border-radius: 10px;
+  padding: 0.32rem 0.6rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2e2823;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px rgba(46, 40, 35, 0.85);
+  transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.1s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.audio-control-btn:hover {
+  background-color: #f5efe6;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px rgba(46, 40, 35, 0.85);
+}
+
+.audio-control-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(46, 40, 35, 0.85);
+}
+
+.audio-control-btn.is-muted,
+.audio-control-btn.is-deafened {
+  background-color: #fee2e2;
+  border-color: #e11d48;
+  color: #e11d48;
+  box-shadow: 2px 2px 0px rgba(225, 29, 72, 0.85);
+}
+
+.audio-control-btn .ui-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Alternancia explicita de icones SVG de audio */
+#toggleMicBtn .icon-mic-muted {
+  display: none !important;
+}
+#toggleMicBtn.is-muted .icon-mic {
+  display: none !important;
+}
+#toggleMicBtn.is-muted .icon-mic-muted {
+  display: inline-block !important;
+}
+
+#toggleAudioBtn .icon-speaker-muted {
+  display: none !important;
+}
+#toggleAudioBtn.is-deafened .icon-speaker {
+  display: none !important;
+}
+#toggleAudioBtn.is-deafened .icon-speaker-muted {
+  display: inline-block !important;
+}
+
+.audio-btn-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+
+/* Telas menores */
+@media (max-width: 480px) {
+  .audio-controls-panel {
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    left: max(0.5rem, env(safe-area-inset-left));
+    gap: 0.35rem;
   }
 
-  .name-input {
-    width: 36px;
+  .audio-control-btn {
+    padding: 0.28rem 0.5rem;
+    font-size: 0.68rem;
+    border-radius: 8px;
   }
 
-  .round-text {
-    display: none;
+  .audio-control-btn .ui-icon {
+    width: 14px;
+    height: 14px;
   }
 }

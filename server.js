@@ -102,6 +102,8 @@ class GameRoom {
 
     this.activeBugs = new Map();
     this.colorIndex = 0;
+    this.nextJoinIndex = 1;
+    this.disconnectedSessions = new Map(); // sessionId -> { data, timeout }
 
     this.tickInterval = null;
     this.chaosInterval = null;
@@ -397,25 +399,83 @@ class GameRoom {
     }, 1000);
   }
 
-  addClient(peerId, socket) {
-    const defaultColor = COLORS[this.colorIndex % COLORS.length];
-    const defaultName = "Amigo (" + peerId.slice(-4) + ")";
-    this.colorIndex++;
-
-    if (!this.adminId) {
-      this.adminId = peerId;
-      console.log(`👑 [Admin Master Definido] [Sala: ${this.id}] ${peerId}`);
+  recalculateAdmin() {
+    if (this.clients.size === 0) {
+      this.adminId = null;
+      return;
     }
 
-    const isUserAdmin = peerId === this.adminId;
+    let oldestPeerId = null;
+    let oldestIndex = Infinity;
+
+    for (const [id, client] of this.clients.entries()) {
+      if (client.joinIndex < oldestIndex) {
+        oldestIndex = client.joinIndex;
+        oldestPeerId = id;
+      }
+    }
+
+    const previousAdminId = this.adminId;
+    this.adminId = oldestPeerId;
+
+    for (const [id, client] of this.clients.entries()) {
+      client.isAdmin = id === this.adminId;
+    }
+
+    if (previousAdminId !== this.adminId && this.adminId) {
+      console.log(`👑 [Sucessao de Admin Master] [Sala: ${this.id}] Novo admin: ${this.adminId}`);
+      const newAdmin = this.clients.get(this.adminId);
+      if (newAdmin && newAdmin.socket) {
+        sendWSMessage(newAdmin.socket, {
+          type: "you_are_admin",
+          isAdmin: true,
+        });
+      }
+      this.broadcast({
+        type: "admin_changed",
+        adminId: this.adminId,
+        scoreboard: this.getScoreboard(),
+      });
+    }
+  }
+
+  addClient(peerId, socket, sessionId = null) {
+    let defaultColor = COLORS[this.colorIndex % COLORS.length];
+    let defaultName = "Amigo (" + peerId.slice(-4) + ")";
+    let userScore = 0;
+    let userJoinIndex = this.nextJoinIndex++;
+
+    // Recupera sessao anterior caso reconectando dentro da janela de tolerancia
+    if (sessionId && this.disconnectedSessions.has(sessionId)) {
+      const cached = this.disconnectedSessions.get(sessionId);
+      if (cached.timeout) clearTimeout(cached.timeout);
+      this.disconnectedSessions.delete(sessionId);
+
+      userScore = cached.data.score || 0;
+      defaultColor = cached.data.color || defaultColor;
+      defaultName = cached.data.name || defaultName;
+      if (cached.data.joinIndex !== undefined) {
+        userJoinIndex = cached.data.joinIndex;
+      }
+      console.log(`🔄 [Sessao Restaurada] [Sala: ${this.id}] ${peerId} (Sessao: ${sessionId}) com ${userScore} pontos`);
+    } else {
+      this.colorIndex++;
+    }
 
     this.clients.set(peerId, {
       socket,
+      sessionId: sessionId || peerId,
+      joinIndex: userJoinIndex,
       color: defaultColor,
       name: defaultName,
-      score: 0,
-      isAdmin: isUserAdmin,
+      score: userScore,
+      isAdmin: false,
+      isAlive: true,
+      lastActive: Date.now(),
     });
+
+    this.recalculateAdmin();
+    const isUserAdmin = peerId === this.adminId;
 
     const existingPeers = Array.from(this.clients.entries())
       .filter(([id]) => id !== peerId)
@@ -469,25 +529,31 @@ class GameRoom {
   removeClient(peerId) {
     if (!this.clients.has(peerId)) return;
 
+    const client = this.clients.get(peerId);
+    const sessionId = client?.sessionId;
+
+    // Guarda estado em buffer de desconexao transiente por 15 segundos
+    if (sessionId) {
+      const timeout = setTimeout(() => {
+        this.disconnectedSessions.delete(sessionId);
+      }, 15000);
+
+      this.disconnectedSessions.set(sessionId, {
+        data: {
+          score: client.score || 0,
+          color: client.color,
+          name: client.name,
+          joinIndex: client.joinIndex,
+          isAdmin: client.isAdmin,
+        },
+        timeout,
+      });
+    }
+
     this.clients.delete(peerId);
     console.log(`🚪 [Jogador Saiu] [Sala: ${this.id}] ${peerId} (${this.clients.size}/${MAX_PLAYERS_PER_ROOM})`);
 
-    if (peerId === this.adminId) {
-      const remaining = Array.from(this.clients.keys());
-      this.adminId = remaining.length > 0 ? remaining[0] : null;
-
-      if (this.adminId) {
-        const newAdmin = this.clients.get(this.adminId);
-        if (newAdmin) {
-          newAdmin.isAdmin = true;
-          console.log(`👑 [Novo Admin Master] [Sala: ${this.id}] ${this.adminId}`);
-          sendWSMessage(newAdmin.socket, {
-            type: "you_are_admin",
-            isAdmin: true,
-          });
-        }
-      }
-    }
+    this.recalculateAdmin();
 
     this.broadcast({
       type: "peer-left",
@@ -566,6 +632,13 @@ class GameRoom {
           signalType: msg.signalType || msg.type,
           data: data,
         });
+      }
+    } else if (msg.type === "ping") {
+      const client = this.clients.get(peerId);
+      if (client) {
+        client.isAlive = true;
+        client.lastActive = Date.now();
+        sendWSMessage(client.socket, { type: "pong" });
       }
     }
   }
@@ -703,8 +776,11 @@ server.on("upgrade", (req, socket) => {
 
   socket.write(responseHeaders);
 
+  const rawSessionId = reqUrl.searchParams.get("sessionId");
+  const sessionId = rawSessionId ? rawSessionId.trim().slice(0, 48) : null;
+
   const peerId = "user_" + Math.random().toString(36).substring(2, 8);
-  room.addClient(peerId, socket);
+  room.addClient(peerId, socket, sessionId);
 
   let buffer = Buffer.alloc(0);
 
@@ -742,6 +818,16 @@ server.on("upgrade", (req, socket) => {
       if (opcode === 0x9) {
         const pong = Buffer.from([0x8a, 0x00]);
         socket.write(pong);
+        buffer = buffer.slice(totalFrameSize);
+        continue;
+      }
+
+      if (opcode === 0xa) {
+        const client = room.clients.get(peerId);
+        if (client) {
+          client.isAlive = true;
+          client.lastActive = Date.now();
+        }
         buffer = buffer.slice(totalFrameSize);
         continue;
       }
@@ -788,7 +874,36 @@ server.on("upgrade", (req, socket) => {
 });
 
 // ============================================================================
-// 3. INICIALIZAÇÃO
+// 3. KEEPALIVE / HEARTBEAT DO SERVIDOR (RFC 6455 PING / PONG A CADA 15S)
+// ============================================================================
+const HEARTBEAT_INTERVAL = 15000;
+const PING_FRAME = Buffer.from([0x89, 0x00]);
+
+setInterval(() => {
+  for (const [roomId, room] of rooms.entries()) {
+    for (const [peerId, client] of room.clients.entries()) {
+      if (client.isAlive === false) {
+        console.log(`[Heartbeat Timeout] [Sala: ${roomId}] Encerrando conexao inativa do peer ${peerId}`);
+        try {
+          client.socket.destroy();
+        } catch (_) {}
+        continue;
+      }
+
+      client.isAlive = false;
+      try {
+        client.socket.write(PING_FRAME);
+      } catch (_) {
+        try {
+          client.socket.destroy();
+        } catch (_) {}
+      }
+    }
+  }
+}, HEARTBEAT_INTERVAL);
+
+// ============================================================================
+// 4. INICIALIZAÇÃO
 // ============================================================================
 server.listen(PORT, () => {
   const localIP = getLocalIP();

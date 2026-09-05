@@ -13,6 +13,11 @@ let isGamePaused = false;
 let toastTimeout = null;
 let currentRoomId = null;
 
+// Estado de Audio Local
+let localAudioStream = null;
+let isMicMuted = false;
+let isAudioDeafened = false;
+
 // Mapa de peers: peerId -> { pc, channel, cursorEl, color, name, candidatesQueue: [] }
 const peers = new Map();
 
@@ -81,6 +86,22 @@ const roomFullOverlay = document.getElementById("roomFullOverlay");
 const roomFullMessage = document.getElementById("roomFullMessage");
 const roomFullCreateBtn = document.getElementById("roomFullCreateBtn");
 const roomFullLobbyBtn = document.getElementById("roomFullLobbyBtn");
+
+// Elementos de Controle de Audio (Canto Esquerdo)
+const toggleMicBtn = document.getElementById("toggleMicBtn");
+const iconMicActive = document.getElementById("iconMicActive");
+const iconMicMuted = document.getElementById("iconMicMuted");
+const micBtnLabel = document.getElementById("micBtnLabel");
+const toggleAudioBtn = document.getElementById("toggleAudioBtn");
+const iconAudioActive = document.getElementById("iconAudioActive");
+const iconAudioMuted = document.getElementById("iconAudioMuted");
+const audioBtnLabel = document.getElementById("audioBtnLabel");
+const connectionStatusBadge = document.getElementById("connectionStatusBadge");
+
+// Estado de Deteccao de Voz (VAD)
+const speakingPeers = new Set();
+let sharedAudioContext = null;
+let localVadDetector = null;
 
 let lobbyRoomsInterval = null;
 
@@ -441,6 +462,30 @@ function applyPauseState(isPaused, pausedBy) {
 // ---------------------------------------------------------------------------
 // PLACAR DE BUGS (LEADERBOARD)
 // ---------------------------------------------------------------------------
+function updateScoreboardSpeakingState(playerId, isSpeaking) {
+  if (isSpeaking) {
+    speakingPeers.add(playerId);
+  } else {
+    speakingPeers.delete(playerId);
+  }
+
+  const itemEl = document.querySelector(`.scoreboard-item[data-player-id="${playerId}"]`);
+  if (itemEl) {
+    if (isSpeaking) {
+      itemEl.classList.add("is-speaking");
+      if (!itemEl.querySelector(".speaking-indicator-dot")) {
+        const dot = document.createElement("span");
+        dot.className = "speaking-indicator-dot";
+        dot.title = "Falando...";
+        itemEl.querySelector(".scoreboard-player")?.appendChild(dot);
+      }
+    } else {
+      itemEl.classList.remove("is-speaking");
+      itemEl.querySelector(".speaking-indicator-dot")?.remove();
+    }
+  }
+}
+
 function renderScoreboard(scoreboardData) {
   if (!scoreboardData || scoreboardData.length === 0) {
     scoreboardList.innerHTML = `<div class="scoreboard-empty">Aguardando início...</div>`;
@@ -452,20 +497,23 @@ function renderScoreboard(scoreboardData) {
   scoreboardList.innerHTML = sorted
     .map((player, index) => {
       const isMe = player.id === myId;
+      const isSpeaking = speakingPeers.has(player.id);
       const rankClass = index === 0 ? "rank-gold" : index === 1 ? "rank-silver" : index === 2 ? "rank-bronze" : "rank-num";
       const rankText = `${index + 1}º`;
       const adminBadge = player.isAdmin
         ? `<svg class="crown-svg" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" stroke-width="1.5" title="Admin Master"><polygon points="2 4 5 18 19 18 22 4 15 10 12 2 9 10 2 4"/></svg>`
         : "";
       const displayName = isMe ? `${player.name || "Você"} (Você)` : (player.name || "Amigo");
+      const speakingDot = isSpeaking ? `<span class="speaking-indicator-dot" title="Falando..."></span>` : "";
 
       return `
-        <div class="scoreboard-item ${isMe ? 'is-me' : ''}">
+        <div class="scoreboard-item ${isMe ? 'is-me' : ''} ${isSpeaking ? 'is-speaking' : ''}" data-player-id="${player.id}">
           <div class="scoreboard-player" title="${displayName}">
             <span class="scoreboard-rank ${rankClass}">${rankText}</span>
             <span class="scoreboard-color" style="background-color: ${player.color || '#0284c7'}"></span>
             <span class="player-name">${displayName}</span>
             ${adminBadge}
+            ${speakingDot}
           </div>
           <span class="scoreboard-score">${player.score || 0}</span>
         </div>
@@ -768,8 +816,68 @@ function clearAllBugs() {
 }
 
 // ============================================================================
-// CONEXÃO COM O SERVIDOR WEBSOCKET POR SALA
+// CONEXÃO COM O SERVIDOR WEBSOCKET POR SALA E SESSAO PERSISTENTE
 // ============================================================================
+let mySessionId = sessionStorage.getItem("webrtc_bujo_session_id");
+if (!mySessionId) {
+  mySessionId = "sess_" + Math.random().toString(36).substring(2, 10);
+  try {
+    sessionStorage.setItem("webrtc_bujo_session_id", mySessionId);
+  } catch (_) {}
+}
+
+let lastHeartbeatPong = Date.now();
+let heartbeatInterval = null;
+let reconnectAttempts = 0;
+let reconnectTimeout = null;
+
+function startClientHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+  heartbeatInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ type: "ping" }));
+      } catch (_) {}
+    }
+  }, 12000);
+}
+
+function scheduleReconnect(roomId) {
+  if (reconnectTimeout) clearTimeout(reconnectTimeout);
+  if (connectionStatusBadge) connectionStatusBadge.classList.remove("hidden");
+  const delay = Math.min(1000 * Math.pow(1.3, reconnectAttempts), 4000);
+  reconnectAttempts++;
+  reconnectTimeout = setTimeout(() => {
+    if (currentRoomId) {
+      initWebSocket(currentRoomId);
+    }
+  }, delay);
+}
+
+function handlePageForeground() {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    try {
+      ws.send(JSON.stringify({ type: "ping" }));
+    } catch (_) {}
+  } else if (currentRoomId) {
+    initWebSocket(currentRoomId);
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    handlePageForeground();
+  }
+});
+
+window.addEventListener("pageshow", () => {
+  handlePageForeground();
+});
+
+window.addEventListener("resume", () => {
+  handlePageForeground();
+});
+
 function initWebSocket(roomId) {
   if (ws) {
     try { ws.close(); } catch (_) {}
@@ -781,20 +889,31 @@ function initWebSocket(roomId) {
   clearAllBugs();
 
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProtocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}`;
+  const wsUrl = `${wsProtocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}&sessionId=${encodeURIComponent(mySessionId)}`;
 
   ws = new WebSocket(wsUrl);
 
-  ws.onopen = () => {};
+  ws.onopen = () => {
+    reconnectAttempts = 0;
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    if (connectionStatusBadge) connectionStatusBadge.classList.add("hidden");
+    startClientHeartbeat();
+  };
 
   ws.onclose = () => {
     setRoundActiveState(false);
+    if (currentRoomId) {
+      scheduleReconnect(currentRoomId);
+    }
   };
 
   ws.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
 
     switch (msg.type) {
+      case "pong":
+        lastHeartbeatPong = Date.now();
+        break;
       case "welcome":
         myId = msg.myId;
         currentRoomId = msg.roomId || roomId;
@@ -927,8 +1046,16 @@ function initWebSocket(roomId) {
         if (msg.scoreboard) renderScoreboard(msg.scoreboard);
         break;
 
+      case "admin_changed":
+        setAdminState(msg.adminId === myId);
+        if (msg.scoreboard) renderScoreboard(msg.scoreboard);
+        break;
+
       case "peer-left":
         removePeer(msg.peerId);
+        if (msg.adminId) {
+          setAdminState(msg.adminId === myId);
+        }
         if (roomCountText) {
           roomCountText.textContent = `${msg.totalPlayers || (peers.size + 1)}/${msg.maxPlayers || 8}`;
         }
@@ -1015,6 +1142,286 @@ function hideVictoryModal() {
   victoryModal.classList.add("hidden");
 }
 
+// ============================================================================
+// GERENCIAMENTO DE AUDIO LOCAL (MICROFONE)
+// ============================================================================
+function getSharedAudioContext() {
+  if (!sharedAudioContext) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      sharedAudioContext = new AudioCtx();
+    }
+  }
+  if (sharedAudioContext && sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume().catch(() => {});
+  }
+  return sharedAudioContext;
+}
+
+function setupVoiceActivityDetector(stream, onSpeakingChange) {
+  const audioCtx = getSharedAudioContext();
+  if (!audioCtx || !stream) return null;
+
+  try {
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.3;
+    source.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let isCurrentlySpeaking = false;
+    let silenceTimeout = null;
+    let intervalId = null;
+
+    const checkVolume = () => {
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i];
+      }
+      const avg = sum / dataArray.length;
+
+      if (avg > 15) {
+        if (!isCurrentlySpeaking) {
+          isCurrentlySpeaking = true;
+          onSpeakingChange(true);
+        }
+        if (silenceTimeout) clearTimeout(silenceTimeout);
+        silenceTimeout = setTimeout(() => {
+          isCurrentlySpeaking = false;
+          onSpeakingChange(false);
+        }, 350);
+      }
+    };
+
+    intervalId = setInterval(checkVolume, 90);
+
+    return {
+      destroy: () => {
+        if (intervalId) clearInterval(intervalId);
+        if (silenceTimeout) clearTimeout(silenceTimeout);
+        try { source.disconnect(); } catch (_) {}
+        try { analyser.disconnect(); } catch (_) {}
+      },
+    };
+  } catch (err) {
+    console.warn("Detector de voz VAD nao iniciado:", err.message);
+    return null;
+  }
+}
+
+function getSupportedMediaDevices() {
+  if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
+    return navigator.mediaDevices;
+  }
+
+  const legacyGetUserMedia =
+    navigator.getUserMedia ||
+    navigator.webkitGetUserMedia ||
+    navigator.mozGetUserMedia ||
+    navigator.msGetUserMedia;
+
+  if (legacyGetUserMedia) {
+    return {
+      getUserMedia: (constraints) =>
+        new Promise((resolve, reject) => {
+          legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+        }),
+    };
+  }
+
+  return null;
+}
+
+async function getOrCreateLocalAudioStream() {
+  if (localAudioStream) {
+    return localAudioStream;
+  }
+
+  // No iOS (Safari e Chrome), navigator.mediaDevices so existe sob conexao segura HTTPS ou localhost
+  const isSecure = window.isSecureContext || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const mediaDevices = getSupportedMediaDevices();
+
+  if (!isSecure && window.location.protocol === "http:") {
+    showToast("O microfone no celular requer conexao segura HTTPS. Acesse via Railway ou Cloudflare.");
+    return null;
+  }
+
+  if (!mediaDevices) {
+    showToast("Navegador sem suporte a captura de audio.");
+    return null;
+  }
+
+  try {
+    localAudioStream = await mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+
+    // Aplica o estado de mute inicial
+    localAudioStream.getAudioTracks().forEach((track) => {
+      track.enabled = !isMicMuted;
+    });
+
+    attachLocalAudioToPeers();
+
+    if (localVadDetector) {
+      try { localVadDetector.destroy(); } catch (_) {}
+    }
+    localVadDetector = setupVoiceActivityDetector(localAudioStream, (speaking) => {
+      if (!isMicMuted) {
+        updateScoreboardSpeakingState(myId, speaking);
+      } else {
+        updateScoreboardSpeakingState(myId, false);
+      }
+    });
+
+    return localAudioStream;
+  } catch (err) {
+    console.warn("Acesso ao microfone nao concedido ou indisponivel:", err.name, err.message);
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      showToast("Permissao de microfone negada nas configuracoes do navegador.");
+    } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+      showToast("Nenhum microfone foi detectado no dispositivo.");
+    } else {
+      showToast("Microfone indisponivel no momento.");
+    }
+    localAudioStream = null;
+    return null;
+  }
+}
+
+function attachLocalAudioToPeers() {
+  if (!localAudioStream) return;
+  const audioTrack = localAudioStream.getAudioTracks()[0];
+  if (!audioTrack) return;
+
+  for (const [peerId, peerObj] of peers.entries()) {
+    if (!peerObj.pc) continue;
+    const senders = peerObj.pc.getSenders ? peerObj.pc.getSenders() : [];
+    const hasAudioSender = senders.some((s) => s.track && s.track.kind === "audio");
+    if (!hasAudioSender) {
+      try {
+        peerObj.pc.addTrack(audioTrack, localAudioStream);
+        peerObj.pc
+          .createOffer()
+          .then((offer) => peerObj.pc.setLocalDescription(offer))
+          .then(() => {
+            sendWSSignal(peerId, "offer", peerObj.pc.localDescription);
+          })
+          .catch((err) => console.error("Erro ao renegociar audio:", err));
+      } catch (err) {
+        console.error("Erro ao adicionar track de audio:", err);
+      }
+    }
+  }
+}
+
+function stopLocalAudioStream() {
+  if (localVadDetector) {
+    try { localVadDetector.destroy(); } catch (_) {}
+    localVadDetector = null;
+  }
+  updateScoreboardSpeakingState(myId, false);
+
+  if (localAudioStream) {
+    localAudioStream.getTracks().forEach((track) => {
+      try {
+        track.stop();
+      } catch (_) {}
+    });
+    localAudioStream = null;
+  }
+}
+
+async function toggleMicrophone() {
+  if (!localAudioStream) {
+    const stream = await getOrCreateLocalAudioStream();
+    if (!stream) {
+      updateMicUI(true);
+      return;
+    }
+    isMicMuted = false;
+    updateMicUI(false);
+    showToast("Microfone conectado e ativado.");
+    return;
+  }
+
+  isMicMuted = !isMicMuted;
+  localAudioStream.getAudioTracks().forEach((track) => {
+    track.enabled = !isMicMuted;
+  });
+
+  if (isMicMuted) {
+    updateScoreboardSpeakingState(myId, false);
+  }
+
+  updateMicUI(isMicMuted);
+  showToast(isMicMuted ? "Microfone mutado." : "Microfone ativado.");
+}
+
+function updateMicUI(muted) {
+  if (!toggleMicBtn) return;
+  if (muted) {
+    toggleMicBtn.classList.add("is-muted");
+    if (iconMicActive) iconMicActive.classList.add("hidden");
+    if (iconMicMuted) iconMicMuted.classList.remove("hidden");
+    if (micBtnLabel) micBtnLabel.textContent = "Mudo";
+  } else {
+    toggleMicBtn.classList.remove("is-muted");
+    if (iconMicActive) iconMicActive.classList.remove("hidden");
+    if (iconMicMuted) iconMicMuted.classList.add("hidden");
+    if (micBtnLabel) micBtnLabel.textContent = "Mic";
+  }
+}
+
+function toggleAudioDeafen() {
+  isAudioDeafened = !isAudioDeafened;
+
+  for (const peerObj of peers.values()) {
+    if (peerObj.audioEl) {
+      peerObj.audioEl.muted = isAudioDeafened;
+    }
+  }
+
+  updateAudioUI(isAudioDeafened);
+  showToast(isAudioDeafened ? "Som da sala desativado." : "Som da sala ativado.");
+}
+
+function updateAudioUI(deafened) {
+  if (!toggleAudioBtn) return;
+  if (deafened) {
+    toggleAudioBtn.classList.add("is-deafened");
+    if (iconAudioActive) iconAudioActive.classList.add("hidden");
+    if (iconAudioMuted) iconAudioMuted.classList.remove("hidden");
+    if (audioBtnLabel) audioBtnLabel.textContent = "Mudo";
+  } else {
+    toggleAudioBtn.classList.remove("is-deafened");
+    if (iconAudioActive) iconAudioActive.classList.remove("hidden");
+    if (iconAudioMuted) iconAudioMuted.classList.add("hidden");
+    if (audioBtnLabel) audioBtnLabel.textContent = "Som";
+  }
+}
+
+if (toggleMicBtn) {
+  toggleMicBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMicrophone();
+  });
+}
+
+if (toggleAudioBtn) {
+  toggleAudioBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleAudioDeafen();
+  });
+}
+
 function sendWSSignal(targetId, signalType, data) {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
@@ -1045,12 +1452,52 @@ function getOrCreatePeer(peerId, color, name, isInitiator) {
     pc: pc,
     channel: null,
     cursorEl: cursorEl,
+    audioEl: null,
     color: initialColor,
     name: initialName,
     candidatesQueue: [],
   };
 
   peers.set(peerId, peerObj);
+
+  // Anexa faixas de audio local se disponiveis
+  if (localAudioStream) {
+    localAudioStream.getAudioTracks().forEach((track) => {
+      try {
+        pc.addTrack(track, localAudioStream);
+      } catch (_) {}
+    });
+  }
+
+  // Evento de recepcao de audio remoto
+  pc.ontrack = (event) => {
+    if (event.streams && event.streams[0]) {
+      if (!peerObj.audioEl) {
+        const audio = document.createElement("audio");
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.muted = isAudioDeafened;
+        peerObj.audioEl = audio;
+        document.body.appendChild(audio);
+      }
+      peerObj.audioEl.srcObject = event.streams[0];
+      peerObj.audioEl.play().catch(() => {});
+
+      if (peerObj.vadDetector) {
+        try { peerObj.vadDetector.destroy(); } catch (_) {}
+      }
+      peerObj.vadDetector = setupVoiceActivityDetector(event.streams[0], (speaking) => {
+        if (peerObj.cursorEl) {
+          if (speaking) {
+            peerObj.cursorEl.classList.add("is-speaking");
+          } else {
+            peerObj.cursorEl.classList.remove("is-speaking");
+          }
+        }
+        updateScoreboardSpeakingState(peerId, speaking);
+      });
+    }
+  };
 
   pc.onicecandidate = (event) => {
     if (event.candidate) {
@@ -1138,7 +1585,7 @@ function setupDataChannelEvents(channel, peerId, peerObj) {
 }
 
 // ============================================================================
-// SINAIS SDP E CANDIDATOS ICE
+// SINAIS SDP E CANDIDATOS ICE COM PREVENCAO DE CONFLITO (GLARE)
 // ============================================================================
 async function handleSignalingData(senderId, signalType, data) {
   let peer = peers.get(senderId);
@@ -1147,36 +1594,55 @@ async function handleSignalingData(senderId, signalType, data) {
     peer = getOrCreatePeer(senderId, "#e11d48", `Amigo (${senderId.slice(-4)})`, false);
   }
 
-  const pc = peer.pc;
+  let pc = peer.pc;
 
   try {
     if (signalType === "offer") {
+      if (pc.signalingState !== "stable") {
+        try {
+          await pc.setLocalDescription({ type: "rollback" });
+        } catch (_) {
+          // Recria o peer se o estado estiver inconsistente apos retorno de suspensao
+          removePeer(senderId);
+          peer = getOrCreatePeer(senderId, "#e11d48", `Amigo (${senderId.slice(-4)})`, false);
+          pc = peer.pc;
+        }
+      }
+
       await pc.setRemoteDescription(new RTCSessionDescription(data));
 
       while (peer.candidatesQueue.length > 0) {
         const cand = peer.candidatesQueue.shift();
-        await pc.addIceCandidate(new RTCIceCandidate(cand));
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(cand));
+        } catch (_) {}
       }
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       sendWSSignal(senderId, "answer", pc.localDescription);
     } else if (signalType === "answer") {
-      await pc.setRemoteDescription(new RTCSessionDescription(data));
+      if (pc.signalingState === "have-local-offer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(data));
 
-      while (peer.candidatesQueue.length > 0) {
-        const cand = peer.candidatesQueue.shift();
-        await pc.addIceCandidate(new RTCIceCandidate(cand));
+        while (peer.candidatesQueue.length > 0) {
+          const cand = peer.candidatesQueue.shift();
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (_) {}
+        }
       }
     } else if (signalType === "candidate") {
       if (pc.remoteDescription && pc.remoteDescription.type) {
-        await pc.addIceCandidate(new RTCIceCandidate(data));
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(data));
+        } catch (_) {}
       } else {
         peer.candidatesQueue.push(data);
       }
     }
   } catch (err) {
-    console.error("Erro ao processar sinal:", err);
+    console.warn("Erro ao processar sinal SDP/ICE:", err.message);
   }
 }
 
@@ -1203,6 +1669,18 @@ function removePeer(peerId) {
   const peer = peers.get(peerId);
   if (peer) {
     if (peer.cursorEl) peer.cursorEl.remove();
+    if (peer.vadDetector) {
+      try { peer.vadDetector.destroy(); } catch (_) {}
+      peer.vadDetector = null;
+    }
+    updateScoreboardSpeakingState(peerId, false);
+    if (peer.audioEl) {
+      try {
+        peer.audioEl.pause();
+        peer.audioEl.srcObject = null;
+        peer.audioEl.remove();
+      } catch (_) {}
+    }
     if (peer.channel) {
       try { peer.channel.close(); } catch (_) {}
     }
@@ -1212,6 +1690,15 @@ function removePeer(peerId) {
     peers.delete(peerId);
   }
 }
+
+function unlockAudioPlayback() {
+  for (const peerObj of peers.values()) {
+    if (peerObj.audioEl && peerObj.audioEl.paused) {
+      peerObj.audioEl.play().catch(() => {});
+    }
+  }
+}
+window.addEventListener("pointerdown", unlockAudioPlayback, { passive: true });
 
 // ============================================================================
 // RENDERIZAÇÃO VISUAL DO CURSOR
