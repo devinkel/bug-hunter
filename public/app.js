@@ -1841,6 +1841,9 @@ function getOrCreatePeer(peerId, color, name, isInitiator) {
         const audio = document.createElement("audio");
         audio.autoplay = true;
         audio.playsInline = true;
+        audio.setAttribute("playsinline", "true");
+        audio.setAttribute("webkit-playsinline", "true");
+        audio.setAttribute("autoplay", "true");
         audio.muted = isAudioDeafened;
         peerObj.audioEl = audio;
         document.body.appendChild(audio);
@@ -2062,6 +2065,9 @@ function removePeer(peerId) {
 }
 
 function unlockAudioPlayback() {
+  if (sharedAudioContext && sharedAudioContext.state === "suspended") {
+    sharedAudioContext.resume().catch(() => {});
+  }
   for (const peerObj of peers.values()) {
     if (peerObj.audioEl && peerObj.audioEl.paused) {
       peerObj.audioEl.play().catch(() => {});
@@ -2069,6 +2075,8 @@ function unlockAudioPlayback() {
   }
 }
 window.addEventListener("pointerdown", unlockAudioPlayback, { passive: true });
+window.addEventListener("touchstart", unlockAudioPlayback, { passive: true });
+window.addEventListener("click", unlockAudioPlayback, { passive: true });
 
 // ============================================================================
 // RENDERIZAÇÃO VISUAL DO CURSOR
