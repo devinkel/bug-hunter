@@ -16,14 +16,23 @@
 
   <!-- Barra Superior Minimalista e Responsiva (Estilo Bullet Journal) -->
   <header class="top-bar bujo-top-bar" id="topBar">
-    <!-- 1. Indicador da Sala (Clique copia link) -->
-    <div class="room-badge" id="roomBadge" title="Clique para copiar o link desta sala">
-      <svg class="ui-icon icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      <span class="room-name" id="roomNameText">geral</span>
-      <span class="room-count" id="roomCountText">1/8</span>
+    <!-- 1. Indicador da Sala (Clique copia link) e Botao Sair -->
+    <div class="room-group">
+      <div class="room-badge" id="roomBadge" title="Clique para copiar o link desta sala">
+        <svg class="ui-icon icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span class="room-name" id="roomNameText">geral</span>
+        <span class="room-count" id="roomCountText">1/8</span>
+      </div>
+      <button class="btn-icon-subtle bujo-leave-btn" id="leaveRoomBtn" type="button" title="Sair da sala e voltar ao início" aria-label="Sair da sala">
+        <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" x2="9" y1="12" y2="12"/>
+        </svg>
+      </button>
     </div>
 
     <!-- Indicador Discreto de Reconexao -->
@@ -134,6 +143,17 @@
         <span class="bujo-cap-badge">(máx. 8 jogadores por sala)</span>
       </p>
 
+      <!-- Botao Compacto para Personalizar Perfil -->
+      <div class="lobby-profile-pill-wrap">
+        <button type="button" class="lobby-profile-pill" id="lobbyOpenProfileBtn" title="Personalizar seu nome e cor de caneta">
+          <span class="color-swatch profile-pill-swatch" id="lobbyProfilePillSwatch"></span>
+          <span class="profile-pill-label" id="lobbyProfilePillName">Configurar Perfil</span>
+          <svg class="ui-icon icon-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+          </svg>
+        </button>
+      </div>
+
       <div class="lobby-actions">
         <button class="btn btn-primary btn-large bujo-btn-stamp" id="lobbyCreateBtn">
           <svg class="ui-icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -229,6 +249,56 @@
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           </svg>
           Voltar ao Início
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mini Modal de Configuracao de Perfil (Nome e Cor) -->
+  <div class="profile-modal-overlay hidden" id="profileModal">
+    <div class="profile-modal-card bujo-notebook-card">
+      <div class="bujo-washi-tape washi-amber" aria-hidden="true"></div>
+
+      <div class="bujo-top-header">
+        <div class="bujo-page-tag">
+          <span class="bujo-tag-bullet">✦</span> PERFIL DO JOGADOR <span class="bujo-tag-bullet">✦</span>
+        </div>
+      </div>
+
+      <h2 class="bujo-card-title"><span class="bujo-highlight-marker">Sua Caneta</span></h2>
+      <p class="bujo-subtitle">Escolha seu nome e a cor da tinta para jogar.</p>
+
+      <div class="profile-modal-body">
+        <label class="profile-field-label">Cor da Tinta:</label>
+        <div class="color-palette-presets" id="colorPalettePresets"></div>
+
+        <div class="custom-color-picker-row">
+          <label class="color-picker-label modal-color-picker-label" title="Escolher cor personalizada">
+            <input type="color" id="modalCustomColorPicker" class="color-picker-input" />
+            <span class="color-swatch" id="modalCustomColorSwatch"></span>
+          </label>
+          <span class="custom-color-hint">Outra cor personalizada</span>
+        </div>
+
+        <label class="profile-field-label" for="modalNameInput">Seu Nome no Caderno:</label>
+        <div class="bujo-input-container">
+          <span class="bujo-input-icon">✎</span>
+          <input
+            type="text"
+            class="lobby-input bujo-input"
+            id="modalNameInput"
+            placeholder="Digite seu nome..."
+            maxlength="14"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <div class="profile-modal-actions">
+        <button type="button" class="btn btn-primary btn-large bujo-btn-stamp" id="profileModalSaveBtn">
+          <span>Pronto</span>
         </button>
       </div>
     </div>

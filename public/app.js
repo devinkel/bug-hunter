@@ -74,6 +74,7 @@ const canvas = document.getElementById("board");
 
 // Elementos de Salas e Lobby
 const roomBadge = document.getElementById("roomBadge");
+const leaveRoomBtn = document.getElementById("leaveRoomBtn");
 const roomNameText = document.getElementById("roomNameText");
 const roomCountText = document.getElementById("roomCountText");
 const lobbyOverlay = document.getElementById("lobbyOverlay");
@@ -82,10 +83,33 @@ const lobbyJoinForm = document.getElementById("lobbyJoinForm");
 const lobbyRoomInput = document.getElementById("lobbyRoomInput");
 const lobbyRoomsList = document.getElementById("lobbyRoomsList");
 const lobbyRefreshRoomsBtn = document.getElementById("lobbyRefreshRoomsBtn");
+const lobbyOpenProfileBtn = document.getElementById("lobbyOpenProfileBtn");
+const lobbyProfilePillSwatch = document.getElementById("lobbyProfilePillSwatch");
+const lobbyProfilePillName = document.getElementById("lobbyProfilePillName");
+
+// Elementos do Mini Modal de Perfil
+const profileModal = document.getElementById("profileModal");
+const colorPalettePresets = document.getElementById("colorPalettePresets");
+const modalCustomColorPicker = document.getElementById("modalCustomColorPicker");
+const modalCustomColorSwatch = document.getElementById("modalCustomColorSwatch");
+const modalNameInput = document.getElementById("modalNameInput");
+const profileModalSaveBtn = document.getElementById("profileModalSaveBtn");
+
 const roomFullOverlay = document.getElementById("roomFullOverlay");
 const roomFullMessage = document.getElementById("roomFullMessage");
 const roomFullCreateBtn = document.getElementById("roomFullCreateBtn");
 const roomFullLobbyBtn = document.getElementById("roomFullLobbyBtn");
+
+const PRESET_COLORS = [
+  "#0284c7", // Azul
+  "#e11d48", // Vermelho
+  "#16a34a", // Verde
+  "#d97706", // Laranja
+  "#7c3aed", // Roxo
+  "#0d9488", // Teal
+  "#ec4899", // Rosa
+  "#eab308", // Amarelo
+];
 
 // Elementos de Controle de Audio (Canto Esquerdo)
 const toggleMicBtn = document.getElementById("toggleMicBtn");
@@ -245,9 +269,80 @@ function joinRoom(roomId) {
   if (lobbyOverlay) lobbyOverlay.classList.add("hidden");
   if (roomFullOverlay) roomFullOverlay.classList.add("hidden");
 
+  updateLocalProfileUI();
   initWebSocket(cleanRoom);
 }
 window.joinRoom = joinRoom;
+
+function leaveRoom() {
+  if (lobbyRoomsInterval) {
+    clearInterval(lobbyRoomsInterval);
+    lobbyRoomsInterval = null;
+  }
+
+  currentRoomId = null;
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+
+  if (ws) {
+    try {
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.close();
+    } catch (_) {}
+    ws = null;
+  }
+
+  for (const [id] of peers.entries()) {
+    removePeer(id);
+  }
+  peers.clear();
+
+  stopLocalAudioStream();
+  clearAllBugs();
+
+  setRoundActiveState(false);
+  setAdminState(false);
+  amIAdmin = false;
+
+  if (connectionStatusBadge) connectionStatusBadge.classList.add("hidden");
+  if (roundBanner) roundBanner.classList.add("hidden");
+  if (victoryModal) victoryModal.classList.add("hidden");
+  if (pauseOverlay) pauseOverlay.classList.add("hidden");
+  if (roomFullOverlay) roomFullOverlay.classList.add("hidden");
+  if (centerInstructions) centerInstructions.classList.add("hidden");
+
+  window.history.pushState(null, "", window.location.pathname);
+
+  if (roomNameText) roomNameText.textContent = "-";
+  if (roomCountText) roomCountText.textContent = "0/8";
+
+  if (lobbyOverlay) {
+    lobbyOverlay.classList.remove("hidden");
+    fetchActiveRooms();
+    lobbyRoomsInterval = setInterval(fetchActiveRooms, 4000);
+  }
+
+  updateLocalProfileUI();
+  showToast("Voce voltou para o menu inicial.");
+}
+window.leaveRoom = leaveRoom;
+
+if (leaveRoomBtn) {
+  leaveRoomBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    leaveRoom();
+  });
+}
+
+if (roomFullLobbyBtn) {
+  roomFullLobbyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    leaveRoom();
+  });
+}
 
 async function fetchActiveRooms() {
   if (!lobbyRoomsList) return;
@@ -523,28 +618,113 @@ function renderScoreboard(scoreboardData) {
 }
 
 // ---------------------------------------------------------------------------
-// CUSTOMIZAÇÃO DE NOME E COR
+// CUSTOMIZAÇÃO DE NOME E COR (SINCRONIZADA ENTRE LOBBY E JOGO)
 // ---------------------------------------------------------------------------
+function renderColorPalettePresets() {
+  if (!colorPalettePresets) return;
+  colorPalettePresets.innerHTML = PRESET_COLORS.map((hex) => {
+    const isSelected = myColor && myColor.toLowerCase() === hex.toLowerCase();
+    return `
+      <button 
+        type="button" 
+        class="color-preset-btn ${isSelected ? 'selected' : ''}" 
+        data-color="${hex}" 
+        style="background-color: ${hex}" 
+        title="Cor ${hex}" 
+        aria-label="Escolher cor ${hex}">
+      </button>
+    `;
+  }).join("");
+
+  colorPalettePresets.querySelectorAll(".color-preset-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const selectedHex = btn.getAttribute("data-color");
+      setLocalUserColor(selectedHex);
+      renderColorPalettePresets();
+    });
+  });
+}
+
 function updateLocalProfileUI() {
-  if (myName) nameInput.value = myName;
+  if (nameInput) nameInput.value = myName || "";
+  if (modalNameInput) modalNameInput.value = myName || "";
+  if (lobbyProfilePillName) {
+    lobbyProfilePillName.textContent = myName ? myName : "Configurar Perfil";
+  }
+
   if (myColor) {
-    colorPicker.value = myColor;
-    myColorSwatch.style.backgroundColor = myColor;
+    if (colorPicker) colorPicker.value = myColor;
+    if (myColorSwatch) myColorSwatch.style.backgroundColor = myColor;
+    if (lobbyProfilePillSwatch) lobbyProfilePillSwatch.style.backgroundColor = myColor;
+    if (modalCustomColorPicker) modalCustomColorPicker.value = myColor;
+    if (modalCustomColorSwatch) modalCustomColorSwatch.style.backgroundColor = myColor;
   }
 }
 
-nameInput.addEventListener("input", (e) => {
-  myName = e.target.value.trim() || `Você (${myId ? myId.slice(-4) : "..."})`;
+function setLocalUserName(newName) {
+  myName = newName.trim();
   localStorage.setItem("webrtc_user_name", myName);
+  updateLocalProfileUI();
   broadcastProfileChange();
-});
+}
 
-colorPicker.addEventListener("input", (e) => {
-  myColor = e.target.value;
-  myColorSwatch.style.backgroundColor = myColor;
+function setLocalUserColor(newColor) {
+  myColor = newColor;
   localStorage.setItem("webrtc_user_color", myColor);
+  updateLocalProfileUI();
   broadcastProfileChange();
-});
+}
+
+function openProfileModal() {
+  if (!profileModal) return;
+  updateLocalProfileUI();
+  renderColorPalettePresets();
+  profileModal.classList.remove("hidden");
+  if (modalNameInput) {
+    setTimeout(() => modalNameInput.focus(), 80);
+  }
+}
+
+function closeProfileModal() {
+  if (!profileModal) return;
+  profileModal.classList.add("hidden");
+}
+
+if (nameInput) {
+  nameInput.addEventListener("input", (e) => setLocalUserName(e.target.value));
+}
+
+if (modalNameInput) {
+  modalNameInput.addEventListener("input", (e) => setLocalUserName(e.target.value));
+}
+
+if (colorPicker) {
+  colorPicker.addEventListener("input", (e) => setLocalUserColor(e.target.value));
+}
+
+if (modalCustomColorPicker) {
+  modalCustomColorPicker.addEventListener("input", (e) => {
+    setLocalUserColor(e.target.value);
+    renderColorPalettePresets();
+  });
+}
+
+if (lobbyOpenProfileBtn) {
+  lobbyOpenProfileBtn.addEventListener("click", openProfileModal);
+}
+
+if (profileModalSaveBtn) {
+  profileModalSaveBtn.addEventListener("click", closeProfileModal);
+}
+
+// Fechar modal ao clicar fora do card
+if (profileModal) {
+  profileModal.addEventListener("click", (e) => {
+    if (e.target === profileModal) {
+      closeProfileModal();
+    }
+  });
+}
 
 function broadcastProfileChange() {
   broadcastP2P({
@@ -1810,6 +1990,8 @@ function broadcastP2P(data) {
 // ============================================================================
 // INICIALIZAÇÃO DA APLICAÇÃO
 // ============================================================================
+updateLocalProfileUI();
+
 const initialRoom = getRoomFromURL();
 if (initialRoom) {
   joinRoom(initialRoom);

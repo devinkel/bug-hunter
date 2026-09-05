@@ -138,6 +138,43 @@ body.round-playing .top-bar {
 }
 
 /* 1. Indicador da Sala Atual (Carimbo de Aba BuJo) */
+.room-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.bujo-leave-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #ede6d8;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  color: #2e2823;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.bujo-leave-btn:hover {
+  background: #fee2e2;
+  border-color: #e11d48;
+  color: #e11d48;
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px rgba(225, 29, 72, 0.85);
+}
+
+.bujo-leave-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
 .room-badge {
   display: flex;
   align-items: center;
@@ -576,8 +613,28 @@ body.round-playing .top-bar {
   transition: opacity 0.3s ease;
 }
 
+.profile-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(46, 40, 35, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2900;
+  padding: 1rem;
+  box-sizing: border-box;
+  transition: opacity 0.3s ease;
+}
+
 .lobby-overlay.hidden,
-.room-full-overlay.hidden {
+.room-full-overlay.hidden,
+.profile-modal-overlay.hidden {
   opacity: 0;
   pointer-events: none;
   display: none !important;
@@ -586,7 +643,8 @@ body.round-playing .top-bar {
 .lobby-card.bujo-notebook-card,
 .room-full-card.bujo-notebook-card,
 .pause-card.bujo-notebook-card,
-.victory-card.bujo-notebook-card {
+.victory-card.bujo-notebook-card,
+.profile-modal-card.bujo-notebook-card {
   position: relative;
   background-color: #faf8f5;
   background-image: radial-gradient(circle, rgba(168, 150, 134, 0.32) 1.1px, transparent 1.1px);
@@ -762,6 +820,141 @@ body.round-playing .top-bar {
   border-radius: 6px;
   border: 1px solid #c8bcab;
   white-space: nowrap;
+}
+
+/* Botao Compacto de Perfil no Lobby */
+.lobby-profile-pill-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+}
+
+.lobby-profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #ede6d8;
+  border: 1.5px solid var(--bujo-border);
+  border-radius: 9999px;
+  padding: 0.22rem 0.75rem 0.22rem 0.35rem;
+  box-shadow: 1.5px 1.5px 0px var(--bujo-border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--bujo-ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.lobby-profile-pill:hover,
+.lobby-profile-pill:active {
+  background: #e2d7c3;
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0px var(--bujo-border);
+}
+
+.profile-pill-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  flex-shrink: 0;
+}
+
+.profile-pill-label {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-profile-pill .ui-icon {
+  width: 13px;
+  height: 13px;
+  color: #5c4e43;
+}
+
+/* Mini Modal de Configuracao de Perfil */
+.profile-modal-card.bujo-notebook-card {
+  max-width: 360px;
+  padding: 1.6rem 1.4rem 1.2rem 1.4rem;
+}
+
+.profile-modal-body {
+  margin: 0.8rem 0 1.1rem 0;
+  text-align: left;
+}
+
+.profile-field-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #5c4e43;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.profile-field-label:first-child {
+  margin-top: 0;
+}
+
+.color-palette-presets {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+}
+
+.color-preset-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--bujo-border);
+  box-shadow: 1px 1px 0px var(--bujo-border);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  touch-action: manipulation;
+}
+
+.color-preset-btn:hover {
+  transform: scale(1.15);
+}
+
+.color-preset-btn.selected {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px var(--bujo-border);
+}
+
+.custom-color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+
+.custom-color-hint {
+  font-size: 0.72rem;
+  color: #6b5b4f;
+  font-weight: 600;
+}
+
+.profile-modal-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.profile-modal-actions .btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .lobby-actions {
@@ -2068,8 +2261,9 @@ body.round-playing .top-bar {
   .lobby-card.bujo-notebook-card,
   .room-full-card.bujo-notebook-card,
   .victory-card.bujo-notebook-card,
-  .pause-card.bujo-notebook-card {
-    padding: 1.6rem 1.2rem 1.1rem 1.2rem;
+  .pause-card.bujo-notebook-card,
+  .profile-modal-card.bujo-notebook-card {
+    padding: 1.35rem 1.1rem 1rem 1.1rem;
     border-radius: 16px;
     box-shadow: 
       0 15px 30px rgba(46, 40, 35, 0.3),
@@ -2077,34 +2271,43 @@ body.round-playing .top-bar {
       3px 3px 0px rgba(46, 40, 35, 0.85);
   }
 
+  .lobby-profile-pill-wrap {
+    margin-bottom: 0.65rem;
+  }
+
+  .lobby-profile-pill {
+    padding: 0.18rem 0.65rem 0.18rem 0.3rem;
+    font-size: 0.74rem;
+  }
+
   .bujo-washi-tape {
     top: -11px;
-    width: 100px;
-    height: 22px;
+    width: 90px;
+    height: 20px;
   }
 
   .bujo-stamp-badge {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
   }
 
   .bujo-bug-svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .bujo-main-title {
-    font-size: 1.8rem;
+    font-size: 1.65rem;
   }
 
   .bujo-subtitle {
-    font-size: 0.95rem;
-    margin-bottom: 0.9rem;
+    font-size: 0.88rem;
+    margin-bottom: 0.65rem;
   }
 
   .bujo-btn-stamp {
-    font-size: 1.1rem;
-    padding: 0.65rem 1rem;
+    font-size: 1.05rem;
+    padding: 0.55rem 0.9rem;
   }
 
   .bujo-join-form {
