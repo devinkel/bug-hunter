@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="paperDot" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#beb5a5"/>
+      <stop offset="100%" stop-color="#beb5a5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="goldGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="4" dy="8" stdDeviation="12" flood-color="#2e2823" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Fundo Estilo Caderno BuJo (Papel Pontilhado) -->
+  <rect width="512" height="512" rx="108" fill="#f7f4eb"/>
+  
+  <!-- Grid de Pontos -->
+  <g fill="#beb5a5" opacity="0.6">
+    <circle cx="96" cy="96" r="4"/><circle cx="176" cy="96" r="4"/><circle cx="256" cy="96" r="4"/><circle cx="336" cy="96" r="4"/><circle cx="416" cy="96" r="4"/>
+    <circle cx="96" cy="176" r="4"/><circle cx="176" cy="176" r="4"/><circle cx="256" cy="176" r="4"/><circle cx="336" cy="176" r="4"/><circle cx="416" cy="176" r="4"/>
+    <circle cx="96" cy="256" r="4"/><circle cx="176" cy="256" r="4"/><circle cx="256" cy="256" r="4"/><circle cx="336" cy="256" r="4"/><circle cx="416" cy="256" r="4"/>
+    <circle cx="96" cy="336" r="4"/><circle cx="176" cy="336" r="4"/><circle cx="256" cy="336" r="4"/><circle cx="336" cy="336" r="4"/><circle cx="416" cy="336" r="4"/>
+    <circle cx="96" cy="416" r="4"/><circle cx="176" cy="416" r="4"/><circle cx="256" cy="416" r="4"/><circle cx="336" cy="416" r="4"/><circle cx="416" cy="416" r="4"/>
+  </g>
+
+  <!-- Fita Washi Tape Superior -->
+  <rect x="180" y="32" width="152" height="34" rx="4" fill="#fde68a" stroke="#d97706" stroke-width="2" transform="rotate(-3 256 49)" opacity="0.9"/>
+
+  <!-- Carimbo Circular Principal -->
+  <g filter="url(#shadow)">
+    <circle cx="256" cy="266" r="160" fill="#fcfbf7" stroke="#2e2823" stroke-width="8"/>
+    <circle cx="256" cy="266" r="144" fill="none" stroke="#0284c7" stroke-width="4" stroke-dasharray="12 8"/>
+  </g>
+
+  <!-- Inseto / Bug Estilizado no Centro -->
+  <g transform="translate(156, 166)">
+    <!-- Pernas -->
+    <path d="M40 50 L10 30 M30 80 L5 80 M40 110 L10 130 M160 50 L190 30 M170 80 L195 80 M160 110 L190 130" 
+          stroke="#2e2823" stroke-width="7" stroke-linecap="round"/>
+    <!-- Antenas -->
+    <path d="M80 35 Q65 10 45 15 M120 35 Q135 10 155 15" 
+          stroke="#2e2823" stroke-width="6" stroke-linecap="round"/>
+    <!-- Cabeça -->
+    <circle cx="100" cy="45" r="22" fill="#2e2823"/>
+    <!-- Olhinhos -->
+    <circle cx="90" cy="40" r="4" fill="#fef08a"/>
+    <circle cx="110" cy="40" r="4" fill="#fef08a"/>
+    <!-- Corpo / Élitro -->
+    <ellipse cx="100" cy="98" rx="48" ry="52" fill="#0284c7" stroke="#1e293b" stroke-width="7"/>
+    <line x1="100" y1="52" x2="100" y2="148" stroke="#1e293b" stroke-width="6"/>
+    <!-- Pintinhas do Besouro BuJo -->
+    <circle cx="76" cy="85" r="7" fill="#1e293b"/>
+    <circle cx="124" cy="85" r="7" fill="#1e293b"/>
+    <circle cx="70" cy="115" r="6" fill="#1e293b"/>
+    <circle cx="130" cy="115" r="6" fill="#1e293b"/>
+  </g>
+
+  <!-- Sparkle Doodles no Carimbo -->
+  <text x="135" y="210" font-family="'Patrick Hand', cursive, sans-serif" font-size="28" fill="#d97706" font-weight="bold">✦</text>
+  <text x="350" y="340" font-family="'Patrick Hand', cursive, sans-serif" font-size="28" fill="#16a34a" font-weight="bold">✦</text>
+</svg>

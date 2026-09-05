@@ -163,6 +163,44 @@ function setRoundActiveState(isActive) {
 }
 
 // ---------------------------------------------------------------------------
+// SCREEN WAKE LOCK API (TELA DO CELULAR SEMPRE ACESA NA PARTIDA)
+// ---------------------------------------------------------------------------
+let screenWakeLock = null;
+
+async function requestScreenWakeLock() {
+  try {
+    if ("wakeLock" in navigator && typeof navigator.wakeLock.request === "function") {
+      if (!screenWakeLock) {
+        screenWakeLock = await navigator.wakeLock.request("screen");
+        screenWakeLock.addEventListener("release", () => {
+          screenWakeLock = null;
+        });
+      }
+    }
+  } catch (_) {}
+}
+
+function releaseScreenWakeLock() {
+  if (screenWakeLock) {
+    try {
+      screenWakeLock.release();
+    } catch (_) {}
+    screenWakeLock = null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// FEEDBACK TÁTIL MOBILE (VIBRATION API)
+// ---------------------------------------------------------------------------
+function triggerHapticFeedback(pattern = 30) {
+  try {
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      navigator.vibrate(pattern);
+    }
+  } catch (_) {}
+}
+
+// ---------------------------------------------------------------------------
 // TOAST NOTIFICATION & FEEDBACK
 // ---------------------------------------------------------------------------
 function showToast(text, duration = 2200) {
@@ -219,7 +257,11 @@ if (roomBadge) {
 }
 
 // Controle de recolhimento do Placar
-function toggleScoreboard() {
+function toggleScoreboard(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
   if (scoreboardWidget) {
     scoreboardWidget.classList.toggle("collapsed");
   }
@@ -228,6 +270,22 @@ function toggleScoreboard() {
 if (scoreboardHeader) {
   scoreboardHeader.addEventListener("click", toggleScoreboard);
 }
+
+if (scoreboardCollapseBtn) {
+  scoreboardCollapseBtn.addEventListener("click", toggleScoreboard);
+}
+
+// No mobile o Placar inicia recolhido por padrão para não poluir a tela do jogo
+if (scoreboardWidget && window.innerWidth < 768) {
+  scoreboardWidget.classList.add("collapsed");
+}
+
+// ---------------------------------------------------------------------------
+// RASTRO DE CANETA PONTILHADA / DASH NO CADERNO (CANVAS #BOARD)
+// ---------------------------------------------------------------------------
+const ctx = canvas ? canvas.getContext("2d") : null;
+const penTrailSegments = [];
+let trailAnimFrame = null;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -238,6 +296,96 @@ window.addEventListener("orientationchange", () => {
   setTimeout(resizeCanvas, 150);
 });
 resizeCanvas();
+
+function addPenTrailSegment(x1, y1, x2, y2, color) {
+  if (!ctx) return;
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  if (dist > 350 || dist < 2) return;
+
+  penTrailSegments.push({
+    x1,
+    y1,
+    x2,
+    y2,
+    color: color || "#0284c7",
+    createdAt: Date.now(),
+    duration: 380,
+  });
+
+  if (!trailAnimFrame) {
+    trailAnimFrame = requestAnimationFrame(renderPenTrails);
+  }
+}
+
+function renderPenTrails() {
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const now = Date.now();
+  let activeSegments = 0;
+
+  for (let i = penTrailSegments.length - 1; i >= 0; i--) {
+    const seg = penTrailSegments[i];
+    const age = now - seg.createdAt;
+
+    if (age >= seg.duration) {
+      penTrailSegments.splice(i, 1);
+      continue;
+    }
+
+    activeSegments++;
+    const progress = age / seg.duration;
+    const alpha = (1 - progress) * 0.45;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = seg.color;
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.setLineDash([5, 5]);
+    ctx.moveTo(seg.x1, seg.y1);
+    ctx.lineTo(seg.x2, seg.y2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (activeSegments > 0) {
+    trailAnimFrame = requestAnimationFrame(renderPenTrails);
+  } else {
+    trailAnimFrame = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PREVENÇÃO ESTREITA DE GESTOS, ZOOM E ARRASTO NO MOBILE (iOS & Android)
+// ---------------------------------------------------------------------------
+document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener("touchend", (event) => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 320) {
+    event.preventDefault();
+  }
+  lastTouchEnd = now;
+}, { passive: false });
+
+window.addEventListener("touchmove", (e) => {
+  if (!e.target.closest(".bujo-rooms-list, .profile-modal-body, input, textarea")) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+window.addEventListener("contextmenu", (e) => {
+  if (!e.target.closest("input, textarea")) {
+    e.preventDefault();
+  }
+});
 
 // ---------------------------------------------------------------------------
 // GERENCIAMENTO DE SALAS & LOBBY INICIAL
@@ -269,6 +417,12 @@ function joinRoom(roomId) {
   if (lobbyOverlay) lobbyOverlay.classList.add("hidden");
   if (roomFullOverlay) roomFullOverlay.classList.add("hidden");
 
+  // Garante que o placar entre recolhido no mobile
+  if (scoreboardWidget && window.innerWidth < 768) {
+    scoreboardWidget.classList.add("collapsed");
+  }
+
+  requestScreenWakeLock();
   updateLocalProfileUI();
   initWebSocket(cleanRoom);
 }
@@ -302,6 +456,7 @@ function leaveRoom() {
 
   stopLocalAudioStream();
   clearAllBugs();
+  releaseScreenWakeLock();
 
   setRoundActiveState(false);
   setAdminState(false);
@@ -702,10 +857,27 @@ if (colorPicker) {
   colorPicker.addEventListener("input", (e) => setLocalUserColor(e.target.value));
 }
 
+if (myColorSwatch) {
+  myColorSwatch.addEventListener("click", (e) => {
+    if (window.innerWidth < 768) {
+      e.preventDefault();
+      openProfileModal();
+    }
+  });
+}
+
 if (modalCustomColorPicker) {
   modalCustomColorPicker.addEventListener("input", (e) => {
     setLocalUserColor(e.target.value);
     renderColorPalettePresets();
+  });
+}
+
+const topProfileBtn = document.getElementById("topProfileBtn");
+if (topProfileBtn) {
+  topProfileBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    openProfileModal();
   });
 }
 
@@ -871,6 +1043,7 @@ function createBugElement(bugData) {
     const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
 
     smashBug(bugData.id, clientX, clientY);
+    triggerHapticFeedback(25);
     createClickRipple(clientX, clientY, myColor);
     broadcastP2P({
       type: "click",
@@ -963,6 +1136,15 @@ function handleBugKilled(data) {
     createScorePopup(posX, posY, `+${pointsEarned || 1} ${shooterName}!`, shooterColor, false);
   }
 
+  const isMyKill = data.shooterId === myId || (data.shooterName && data.shooterName === myName);
+  if (isMyKill) {
+    if (isGolden) {
+      triggerHapticFeedback([40, 30, 60]);
+    } else {
+      triggerHapticFeedback(35);
+    }
+  }
+
   renderScoreboard(scoreboard);
 }
 
@@ -1035,6 +1217,9 @@ function scheduleReconnect(roomId) {
 }
 
 function handlePageForeground() {
+  if (currentRoomId) {
+    requestScreenWakeLock();
+  }
   if (ws && ws.readyState === WebSocket.OPEN) {
     try {
       ws.send(JSON.stringify({ type: "ping" }));
@@ -1748,7 +1933,11 @@ function setupDataChannelEvents(channel, peerId, peerObj) {
       const data = JSON.parse(event.data);
 
       if (data.type === "mouse") {
-        updateRemoteCursorPosition(peerId, data.x, data.y);
+        updateRemoteCursorPosition(peerId, data.x, data.y, data.isTouch);
+      } else if (data.type === "pointer_up") {
+        if (peerObj.cursorEl) {
+          peerObj.cursorEl.classList.remove("visible");
+        }
       } else if (data.type === "click") {
         createClickRipple(
           data.x * window.innerWidth,
@@ -1848,6 +2037,7 @@ function updatePeerProfile(peerId, newName, newColor) {
 function removePeer(peerId) {
   const peer = peers.get(peerId);
   if (peer) {
+    if (peer.fadeTimeout) clearTimeout(peer.fadeTimeout);
     if (peer.cursorEl) peer.cursorEl.remove();
     if (peer.vadDetector) {
       try { peer.vadDetector.destroy(); } catch (_) {}
@@ -1903,15 +2093,33 @@ function createCursorElement(peerId, color, name) {
   return cursor;
 }
 
-function updateRemoteCursorPosition(peerId, normalizedX, normalizedY) {
+function updateRemoteCursorPosition(peerId, normalizedX, normalizedY, isTouch = false) {
   const peer = peers.get(peerId);
   if (!peer || !peer.cursorEl) return;
 
   const actualX = normalizedX * window.innerWidth;
   const actualY = normalizedY * window.innerHeight;
 
+  if (peer.lastPos) {
+    addPenTrailSegment(
+      peer.lastPos.x * window.innerWidth,
+      peer.lastPos.y * window.innerHeight,
+      actualX,
+      actualY,
+      peer.color || "#0284c7"
+    );
+  }
+  peer.lastPos = { x: normalizedX, y: normalizedY };
+
   peer.cursorEl.classList.add("visible");
   peer.cursorEl.style.transform = `translate3d(${actualX}px, ${actualY}px, 0)`;
+
+  if (peer.fadeTimeout) clearTimeout(peer.fadeTimeout);
+  const fadeDelay = isTouch ? 1200 : 4000;
+  peer.fadeTimeout = setTimeout(() => {
+    if (peer.cursorEl) peer.cursorEl.classList.remove("visible");
+    peer.lastPos = null;
+  }, fadeDelay);
 }
 
 function createClickRipple(x, y, color) {
@@ -1928,11 +2136,26 @@ function createClickRipple(x, y, color) {
 // CAPTURA DO MOUSE / TOQUE LOCAL E TRANSMISSÃO P2P (60 FPS)
 // ============================================================================
 let pendingFrame = false;
+let lastLocalPos = null;
 
-function handlePointerMove(clientX, clientY) {
+function handlePointerMove(clientX, clientY, isTouch = false) {
+  const normX = clientX / window.innerWidth;
+  const normY = clientY / window.innerHeight;
+
+  if (lastLocalPos) {
+    addPenTrailSegment(
+      lastLocalPos.x * window.innerWidth,
+      lastLocalPos.y * window.innerHeight,
+      clientX,
+      clientY,
+      myColor || "#0284c7"
+    );
+  }
+  lastLocalPos = { x: normX, y: normY };
+
   currentMousePos = {
-    x: clientX / window.innerWidth,
-    y: clientY / window.innerHeight,
+    x: normX,
+    y: normY,
   };
 
   if (!pendingFrame) {
@@ -1942,6 +2165,7 @@ function handlePointerMove(clientX, clientY) {
         type: "mouse",
         x: currentMousePos.x,
         y: currentMousePos.y,
+        isTouch: isTouch,
       });
       pendingFrame = false;
     });
@@ -1949,7 +2173,7 @@ function handlePointerMove(clientX, clientY) {
 }
 
 window.addEventListener("pointermove", (event) => {
-  handlePointerMove(event.clientX, event.clientY);
+  handlePointerMove(event.clientX, event.clientY, event.pointerType === "touch");
 });
 
 window.addEventListener("pointerdown", (event) => {
@@ -1964,13 +2188,22 @@ window.addEventListener("pointerdown", (event) => {
   const clientX = event.clientX;
   const clientY = event.clientY;
 
-  handlePointerMove(clientX, clientY);
+  handlePointerMove(clientX, clientY, event.pointerType === "touch");
   createClickRipple(clientX, clientY, myColor);
   broadcastP2P({
     type: "click",
     x: clientX / window.innerWidth,
     y: clientY / window.innerHeight,
   });
+});
+
+window.addEventListener("pointerup", (event) => {
+  lastLocalPos = null;
+  if (event.pointerType === "touch") {
+    broadcastP2P({
+      type: "pointer_up",
+    });
+  }
 });
 
 function broadcastP2P(data) {

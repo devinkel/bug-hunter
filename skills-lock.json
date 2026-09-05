@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "mobile-first-design": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/mobile-first-design/skills/mobile-first-design/SKILL.md",
+      "computedHash": "eae6bad38c2469870656c1449129a4c0c984fd8d841f435c60a9233dae321055"
+    }
+  }
+}

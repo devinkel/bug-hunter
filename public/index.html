@@ -2,14 +2,19 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Caça aos Bugs" />
   <meta name="theme-color" content="#f7f4eb" />
   <title>Caça aos Bugs • Bullet Journal Edition</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gaegu:wght@700&family=JetBrains+Mono:wght@500;700;800&family=Patrick+Hand&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&family=Patrick+Hand&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -18,10 +23,10 @@
   <header class="top-bar bujo-top-bar" id="topBar">
     <!-- 1. Indicador da Sala (Clique copia link) e Botao Sair -->
     <div class="room-group">
-      <div class="room-badge" id="roomBadge" title="Clique para copiar o link desta sala">
-        <svg class="ui-icon icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
+      <div class="room-badge" id="roomBadge" title="Clique para copiar ou compartilhar o link desta sala" aria-label="Copiar link da sala">
+        <svg class="ui-icon icon-copy-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="13" height="13" x="9" y="9" rx="2" ry="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
         </svg>
         <span class="room-name" id="roomNameText">geral</span>
         <span class="room-count" id="roomCountText">1/8</span>
@@ -55,23 +60,14 @@
 
     <div class="divider bar-item-extra"></div>
 
-    <!-- 3. Perfil do Jogador (Cor + Nome) -->
-    <div class="user-customization bar-item-extra" title="Troque sua cor ou edite seu nome">
-      <label class="color-picker-label" title="Alterar cor da caneta">
-        <input type="color" id="colorPicker" class="color-picker-input" />
-        <span class="color-swatch" id="myColorSwatch"></span>
-      </label>
-      <input
-        type="text"
-        id="nameInput"
-        class="name-input"
-        placeholder="Seu nome..."
-        maxlength="14"
-        autocomplete="off"
-        autocorrect="off"
-        spellcheck="false"
-      />
-    </div>
+    <!-- 3. Perfil do Jogador (Botão de Usuário com Indicador de Cor) -->
+    <button class="btn-icon-subtle bujo-profile-btn bar-item-extra" id="topProfileBtn" type="button" title="Personalizar seu nome e cor de caneta" aria-label="Perfil do jogador">
+      <span class="profile-swatch-dot" id="myColorSwatch"></span>
+      <svg class="ui-icon icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    </button>
 
     <!-- 4. Controles do Admin Master (Exibidos APENAS para o Admin) -->
     <div class="admin-controls hidden" id="adminControls">
@@ -273,11 +269,20 @@
         <div class="color-palette-presets" id="colorPalettePresets"></div>
 
         <div class="custom-color-picker-row">
-          <label class="color-picker-label modal-color-picker-label" title="Escolher cor personalizada">
-            <input type="color" id="modalCustomColorPicker" class="color-picker-input" />
-            <span class="color-swatch" id="modalCustomColorSwatch"></span>
+          <label class="custom-color-btn" for="modalCustomColorPicker" title="Escolher cor personalizada na roda de cores">
+            <input type="color" id="modalCustomColorPicker" class="color-picker-input-hidden" />
+            <span class="custom-color-swatch-circle" id="modalCustomColorSwatch"></span>
+            <span class="custom-color-label">
+              <svg class="ui-icon icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+              </svg>
+              <span>Outra cor personalizada...</span>
+            </span>
           </label>
-          <span class="custom-color-hint">Outra cor personalizada</span>
         </div>
 
         <label class="profile-field-label" for="modalNameInput">Seu Nome no Caderno:</label>
