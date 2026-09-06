@@ -562,11 +562,11 @@ body.round-playing .round-badge {
    ========================================================================== */
 .bujo-washi-tape {
   position: absolute;
-  top: -14px;
+  top: -10px;
   left: 50%;
   transform: translateX(-50%) rotate(-1.2deg);
-  width: 140px;
-  height: 28px;
+  width: 105px;
+  height: 20px;
   background: rgba(245, 232, 205, 0.9);
   background-image: repeating-linear-gradient(
     45deg,
@@ -635,8 +635,8 @@ body.round-playing .round-badge {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
+  gap: 0.15rem;
+  margin-bottom: 0.25rem;
 }
 
 .bujo-page-tag {
@@ -666,47 +666,31 @@ body.round-playing .round-badge {
    MODAIS COM ESTILO CADERNO / BULLET JOURNAL (NOTEBOOK CARDS)
    ========================================================================== */
 .lobby-overlay,
-.room-full-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
+.room-full-overlay,
+.profile-modal-overlay,
+.device-install-overlay {
+  position: fixed;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  background: rgba(46, 40, 35, 0.76);
+  background: rgba(46, 40, 35, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2600;
-  padding: 1rem;
+  padding: max(0.4rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(0.4rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
   box-sizing: border-box;
-  transition: opacity 0.3s ease;
-}
-
-.profile-modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  background: rgba(46, 40, 35, 0.82);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2900;
-  padding: 1rem;
-  box-sizing: border-box;
-  transition: opacity 0.3s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .lobby-overlay.hidden,
 .room-full-overlay.hidden,
-.profile-modal-overlay.hidden {
+.profile-modal-overlay.hidden,
+.device-install-overlay.hidden {
   opacity: 0;
   pointer-events: none;
   display: none !important;
@@ -716,23 +700,25 @@ body.round-playing .round-badge {
 .room-full-card.bujo-notebook-card,
 .pause-card.bujo-notebook-card,
 .victory-card.bujo-notebook-card,
-.profile-modal-card.bujo-notebook-card {
+.profile-modal-card.bujo-notebook-card,
+.device-install-card.bujo-notebook-card {
   position: relative;
   background-color: #faf8f5;
   background-image: radial-gradient(circle, rgba(168, 150, 134, 0.32) 1.1px, transparent 1.1px);
   background-size: 22px 22px;
   background-position: 11px 11px;
-  border: 2.5px solid var(--bujo-border);
-  border-radius: 20px;
+  border: 2px solid var(--bujo-border);
+  border-radius: 16px;
   box-shadow:
-    0 22px 50px rgba(46, 40, 35, 0.35),
-    0 4px 12px rgba(46, 40, 35, 0.15),
-    4px 5px 0px rgba(46, 40, 35, 0.85);
-  padding: 2.1rem 2.2rem 1.4rem 2.2rem;
+    0 12px 30px rgba(46, 40, 35, 0.3),
+    0 3px 8px rgba(46, 40, 35, 0.12),
+    3px 4px 0px rgba(46, 40, 35, 0.85);
+  padding: 1.1rem 1rem 0.65rem 1rem;
   text-align: center;
   animation: victoryPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 440px;
+  max-width: 355px;
   width: 100%;
+  margin: auto;
   box-sizing: border-box;
   overflow: visible;
 }
@@ -759,12 +745,12 @@ body.round-playing .round-badge {
 }
 
 .bujo-stamp-badge {
-  width: 60px;
-  height: 60px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: #ffffff;
-  border: 2px dashed #0284c7;
-  box-shadow: 2.5px 2.5px 0px #0284c7;
+  border: 1.8px dashed #0284c7;
+  box-shadow: 2px 2px 0px #0284c7;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -773,23 +759,23 @@ body.round-playing .round-badge {
 
 .bujo-stamp-badge.alert-stamp {
   border-color: #e11d48;
-  box-shadow: 2.5px 2.5px 0px #e11d48;
+  box-shadow: 2px 2px 0px #e11d48;
 }
 
 .bujo-stamp-badge.pause-stamp {
   border-color: #d97706;
-  box-shadow: 2.5px 2.5px 0px #d97706;
+  box-shadow: 2px 2px 0px #d97706;
 }
 
 .bujo-stamp-badge.trophy-stamp {
   border-color: #d97706;
-  box-shadow: 2.5px 2.5px 0px #d97706;
+  box-shadow: 2px 2px 0px #d97706;
   background: #fef3c7;
 }
 
 .bujo-bug-svg {
-  width: 36px;
-  height: 36px;
+  width: 26px;
+  height: 26px;
   stroke: #0284c7;
   animation: trophyBounce 0.9s ease-in-out infinite alternate;
 }
@@ -828,27 +814,27 @@ body.round-playing .round-badge {
 /* Título Principal & Efeito Marca-Texto (Mildliner) */
 .bujo-main-title {
   font-family: var(--font-sans);
-  font-size: 2.05rem;
+  font-size: 1.55rem;
   font-weight: 800;
   color: #1e1b18;
-  line-height: 1.2;
-  margin-bottom: 0.35rem;
+  line-height: 1.15;
+  margin-bottom: 0.15rem;
   letter-spacing: -0.02em;
 }
 
 .bujo-card-title {
   font-family: var(--font-sans);
-  font-size: 1.85rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #1e1b18;
   line-height: 1.2;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.25rem;
 }
 
 .bujo-highlight-marker {
   position: relative;
   display: inline-block;
-  padding: 0.12rem 0.65rem;
+  padding: 0.08rem 0.5rem;
   border-radius: 6px;
   background: rgba(254, 240, 138, 0.88);
   box-shadow: 0 1px 2px rgba(254, 240, 138, 0.3);
@@ -865,15 +851,15 @@ body.round-playing .round-badge {
 /* Subtítulo Estilo Nota de Caderno */
 .bujo-subtitle {
   font-family: var(--font-sans);
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #4a3e35;
-  margin-bottom: 1.2rem;
-  line-height: 1.4;
+  margin-bottom: 0.45rem;
+  line-height: 1.35;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   flex-wrap: wrap;
 }
 
@@ -898,7 +884,7 @@ body.round-playing .round-badge {
 .lobby-profile-pill-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.35rem;
 }
 
 .lobby-profile-pill {
@@ -1105,7 +1091,7 @@ body.round-playing .round-badge {
 .lobby-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.45rem;
 }
 
 /* ==========================================================================
@@ -1125,8 +1111,8 @@ body.round-playing .round-badge {
 }
 
 .btn-large {
-  min-height: 48px;
-  padding: 0.75rem 1.4rem;
+  min-height: 42px;
+  padding: 0.55rem 1.1rem;
   width: 100%;
 }
 
@@ -1135,14 +1121,14 @@ body.round-playing .round-badge {
   background: #0284c7;
   color: #ffffff;
   border: 2px solid #1e293b;
-  box-shadow: 3px 3px 0px #1e293b;
-  border-radius: 14px;
+  box-shadow: 2.5px 2.5px 0px #1e293b;
+  border-radius: 12px;
   font-family: var(--font-sans);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  padding: 0.78rem 1.4rem;
-  min-height: 48px;
+  padding: 0.55rem 1.1rem;
+  min-height: 42px;
 }
 
 .bujo-btn-stamp:hover {
@@ -1177,13 +1163,13 @@ body.round-playing .round-badge {
   background: #ede6d8;
   color: #2e2823;
   border: 2px solid #2e2823;
-  box-shadow: 2.5px 2.5px 0px #2e2823;
-  border-radius: 12px;
+  box-shadow: 2px 2px 0px #2e2823;
+  border-radius: 10px;
   font-family: var(--font-sans);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 800;
-  padding: 0.65rem 1.2rem;
-  min-height: 48px;
+  padding: 0.5rem 0.9rem;
+  min-height: 42px;
 }
 
 .bujo-btn-secondary:hover {
@@ -1225,7 +1211,7 @@ body.round-playing .round-badge {
 .bujo-divider {
   position: relative;
   text-align: center;
-  margin: 0.4rem 0;
+  margin: 0.2rem 0;
 }
 
 .bujo-divider::before {
@@ -1263,10 +1249,10 @@ body.round-playing .round-badge {
   align-items: center;
   flex: 1;
   background: #ffffff;
-  border: 2px dashed #8c7c6d;
-  border-radius: 12px;
-  padding: 0 0.75rem;
-  min-height: 48px;
+  border: 1.8px dashed #8c7c6d;
+  border-radius: 10px;
+  padding: 0 0.65rem;
+  min-height: 42px;
   transition: all 0.2s ease;
   box-shadow: inset 1px 1px 3px rgba(46, 40, 35, 0.06);
   min-width: 0;
@@ -1312,9 +1298,9 @@ body.round-playing .round-badge {
    SEÇÃO DE SALAS ABERTAS (LOG DE SALAS DO CADERNO)
    ========================================================================== */
 .bujo-rooms-section {
-  margin-top: 0.5rem;
-  padding-top: 0.7rem;
-  border-top: 2px dashed #d6cdc0;
+  margin-top: 0.35rem;
+  padding-top: 0.4rem;
+  border-top: 1.5px dashed #d6cdc0;
   text-align: left;
 }
 
@@ -1322,23 +1308,23 @@ body.round-playing .round-badge {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .bujo-rooms-title {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: #4a3e35;
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .bujo-key-circle {
   color: #0284c7;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 
 .bujo-refresh-btn {
@@ -1346,8 +1332,8 @@ body.round-playing .round-badge {
   border: 1.5px solid #5c4e43;
   box-shadow: 1.5px 1.5px 0px #5c4e43;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1371,8 +1357,8 @@ body.round-playing .round-badge {
 .bujo-rooms-list {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  max-height: 140px;
+  gap: 0.35rem;
+  max-height: 95px;
   overflow-y: auto;
   scrollbar-width: thin;
   padding-right: 2px;
@@ -1513,11 +1499,11 @@ body.round-playing .round-badge {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.8rem;
-  padding-top: 0.5rem;
+  margin-top: 0.35rem;
+  padding-top: 0.3rem;
   border-top: 1px dotted #c8bcab;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #8c7c6d;
   letter-spacing: 0.08em;
@@ -2381,7 +2367,8 @@ body.round-playing .scoreboard-widget {
   .room-full-card.bujo-notebook-card,
   .pause-card.bujo-notebook-card,
   .victory-card.bujo-notebook-card,
-  .profile-modal-card.bujo-notebook-card {
+  .profile-modal-card.bujo-notebook-card,
+  .device-install-card.bujo-notebook-card {
     padding: 2.1rem 2.2rem 1.4rem 2.2rem;
     border-radius: 20px;
     max-width: 440px;
@@ -2591,5 +2578,329 @@ body.round-playing .scoreboard-widget {
   .audio-control-btn .ui-icon {
     width: 16px;
     height: 16px;
+  }
+}
+
+/* ==========================================================================
+   PWA & MOBILE APP ALTA FIDELIDADE
+   ========================================================================== */
+
+/* Área de toque expandida (Hitbox Generosa para dedos no Mobile) */
+.bug {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bug::after {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  right: -16px;
+  bottom: -16px;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+/* Botão de Instalar na Top-Bar */
+.bujo-install-btn {
+  color: var(--bujo-blue);
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.bujo-install-btn:hover {
+  background: #e0f2fe;
+  color: var(--bujo-blue-dark);
+}
+
+/* Banner de Instalação no Lobby */
+.lobby-pwa-banner {
+  margin: 0.25rem 0 0.15rem 0;
+  width: 100%;
+}
+
+.pwa-install-pill {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f0f9ff;
+  border: 1.8px dashed #0284c7;
+  border-radius: 10px;
+  padding: 0.4rem 0.65rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 1.5px 1.5px 0px rgba(2, 132, 199, 0.3);
+  position: relative;
+}
+
+.pwa-install-pill:hover {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px rgba(2, 132, 199, 0.4);
+}
+
+.pwa-install-pill:active {
+  transform: translateY(1px);
+  box-shadow: 0.5px 0.5px 0px rgba(2, 132, 199, 0.4);
+}
+
+.pwa-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pwa-pill-text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.pwa-pill-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0369a1;
+  line-height: 1.2;
+}
+
+.pwa-pill-desc {
+  font-size: 0.65rem;
+  color: #0c4a6e;
+  opacity: 0.85;
+}
+
+.pwa-badge {
+  background: #0284c7;
+  color: #ffffff;
+  border: 1.5px solid #0369a1;
+  font-size: 0.62rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Modal Universal de Instalação (Celular, Tablet e Computador) */
+.device-install-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(46, 40, 35, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  padding: max(1rem, env(safe-area-inset-top)) max(0.9rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.9rem, env(safe-area-inset-left));
+  box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.device-install-card.bujo-notebook-card {
+  max-width: 375px;
+  width: 100%;
+  padding: 1.5rem 1.15rem 1.15rem 1.15rem;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.device-install-card .bujo-card-title {
+  font-size: 1.35rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.25;
+}
+
+.device-install-card .bujo-card-title .bujo-highlight-marker {
+  font-size: 1.22rem;
+  padding: 0.12rem 0.6rem;
+}
+
+.device-install-card .bujo-subtitle {
+  font-size: 0.8rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.35;
+  color: var(--bujo-ink-muted);
+}
+
+.device-install-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem 0;
+  text-align: left;
+}
+
+.device-install-block {
+  background: #fdfbf7;
+  border: 1.8px solid var(--bujo-border);
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  box-shadow: 2px 2px 0px rgba(46, 40, 35, 0.4);
+}
+
+.device-block-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+
+.device-badge-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--bujo-border);
+  letter-spacing: 0.02em;
+}
+
+.android-tag {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.apple-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.device-install-card .ios-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: #faf7f0;
+  border: 1.2px solid rgba(46, 40, 35, 0.25);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--bujo-ink);
+}
+
+.device-install-card .ios-step-num {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  background: var(--bujo-blue);
+  color: #ffffff;
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.device-install-card .ios-step-content {
+  flex-grow: 1;
+}
+
+.device-install-card .ios-inline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  padding: 1px 4px;
+  background: #e0f2fe;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.device-install-card .profile-modal-actions {
+  margin-top: 0.65rem;
+  width: 100%;
+}
+
+.device-install-card .profile-modal-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Banner de Atualização do Service Worker */
+.pwa-update-banner {
+  position: fixed;
+  top: max(0.6rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6000;
+  background: #fdfbf7;
+  border: 2px solid var(--bujo-border);
+  border-radius: 9999px;
+  padding: 0.4rem 0.6rem 0.4rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 24px rgba(46, 40, 35, 0.2), 2.5px 2.5px 0px var(--bujo-border);
+  animation: slideDownUpdate 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@keyframes slideDownUpdate {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.pwa-update-content {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-pwa-reload {
+  background: var(--bujo-blue);
+  color: #ffffff;
+  border: 1.5px solid var(--bujo-border);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  box-shadow: 1.5px 1.5px 0px var(--bujo-border);
+  transition: all 0.15s ease;
+}
+
+.btn-pwa-reload:hover {
+  background: var(--bujo-blue-dark);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0px var(--bujo-border);
+}
+
+.btn-pwa-reload:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--bujo-border);
+}
+
+/* Adaptação para Aplicativo Instalado (Standalone) */
+@media all and (display-mode: standalone) {
+  .top-bar {
+    top: max(0.65rem, env(safe-area-inset-top));
+  }
+  .bujo-install-btn,
+  .lobby-pwa-banner {
+    display: none !important;
   }
 }

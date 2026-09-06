@@ -132,7 +132,8 @@ Copie a URL `https://*.trycloudflare.com` gerada e envie para seus amigos. O tú
 
 ## Tecnologias Utilizadas
 
-* **Frontend:** HTML5, CSS3 moderno (Flexbox, Grid, Variáveis CSS, Animações), Vanilla JavaScript (ES6+), HTML5 Canvas API, Pointer Events API, Web Audio API (`AnalyserNode`), Ícones Vetoriais SVG inline.
+* **Frontend:** HTML5, CSS3 moderno (Flexbox, Grid, Variáveis CSS, Safe Areas, Animações), Vanilla JavaScript (ES6+), HTML5 Canvas API, Pointer Events API, Web Audio API (`AnalyserNode`), Ícones Vetoriais SVG inline.
+* **PWA de Alta Fidelidade:** Service Worker com cache offline e Stale-While-Revalidate, Web App Manifest completo (ícones normais e maskable 192x192 / 512x512, Apple Touch Icon 180x180), instalação in-app no Android/Desktop/iOS Safari, e página offline com mini-game de treino.
 * **Comunicação em Tempo Real:** WebRTC (`RTCPeerConnection`, `RTCDataChannel`, `MediaStream Audio Tracks`), WebSockets nativos (RFC 6455).
 * **Backend:** Node.js Nativo (`http`, `crypto`, `os`, `fs`, `path`). Zero frameworks externos.
 * **Infraestrutura STUN:** Google Public STUN, Cloudflare STUN e Mozilla STUN.

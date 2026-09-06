@@ -100,6 +100,18 @@ const roomFullMessage = document.getElementById("roomFullMessage");
 const roomFullCreateBtn = document.getElementById("roomFullCreateBtn");
 const roomFullLobbyBtn = document.getElementById("roomFullLobbyBtn");
 
+// Elementos PWA & Instalação
+const topInstallBtn = document.getElementById("topInstallBtn");
+const lobbyPwaBanner = document.getElementById("lobbyPwaBanner");
+const lobbyPwaInstallBtn = document.getElementById("lobbyPwaInstallBtn");
+const iosInstallModal = document.getElementById("iosInstallModal");
+const iosModalCloseBtn = document.getElementById("iosModalCloseBtn");
+const pwaUpdateBanner = document.getElementById("pwaUpdateBanner");
+const pwaUpdateBtn = document.getElementById("pwaUpdateBtn");
+
+let deferredInstallPrompt = null;
+let newWorkerWaiting = null;
+
 const PRESET_COLORS = [
   "#0284c7", // Azul
   "#e11d48", // Vermelho
@@ -2229,17 +2241,179 @@ function broadcastP2P(data) {
 }
 
 // ============================================================================
-// INICIALIZAÇÃO DA APLICAÇÃO
+// INICIALIZAÇÃO DA APLICAÇÃO & PWA HARDENING
 // ============================================================================
 updateLocalProfileUI();
+initPWA();
 
+const urlParams = new URLSearchParams(window.location.search);
 const initialRoom = getRoomFromURL();
+const urlAction = urlParams.get("action");
+
 if (initialRoom) {
   joinRoom(initialRoom);
+} else if (urlAction === "create") {
+  const newRoomId = generateRandomRoomId();
+  joinRoom(newRoomId);
 } else {
   if (lobbyOverlay) {
     lobbyOverlay.classList.remove("hidden");
     fetchActiveRooms();
     lobbyRoomsInterval = setInterval(fetchActiveRooms, 4000);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GERENCIADOR DO PWA (SERVICE WORKER, INSTALAÇÃO & ATUALIZAÇÕES)
+// ---------------------------------------------------------------------------
+function isRunningStandalone() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes("android-app://")
+  );
+}
+
+function isMobileOrTablet() {
+  return /Mobi|Android|iPhone|iPad|iPod|Tablet|Silk/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+}
+
+function initPWA() {
+  // 1. Registro do Service Worker
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          console.log("📦 [PWA] Service Worker registrado com sucesso:", reg.scope);
+
+          // Detecta novas versões em segundo plano
+          reg.addEventListener("updatefound", () => {
+            const installingWorker = reg.installing;
+            if (!installingWorker) return;
+
+            installingWorker.addEventListener("statechange", () => {
+              if (
+                installingWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                newWorkerWaiting = reg.waiting || installingWorker;
+                showPwaUpdateBanner();
+              }
+            });
+          });
+
+          if (reg.waiting) {
+            newWorkerWaiting = reg.waiting;
+            showPwaUpdateBanner();
+          }
+        })
+        .catch((err) => {
+          console.warn("⚠️ [PWA] Falha ao registrar Service Worker:", err);
+        });
+
+      // Recarrega automaticamente quando o novo service worker assume
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    });
+  }
+
+  // 2. Evento nativo de instalação PWA (Chromium, Edge, Android)
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+
+    // Exibe botões de instalação se não estiver em standalone
+    if (!isRunningStandalone()) {
+      if (lobbyPwaBanner) lobbyPwaBanner.classList.remove("hidden");
+      if (topInstallBtn) topInstallBtn.classList.remove("hidden");
+    }
+  });
+
+  window.addEventListener("appinstalled", () => {
+    console.log("[PWA] Aplicativo instalado com sucesso!");
+    deferredInstallPrompt = null;
+    if (lobbyPwaBanner) lobbyPwaBanner.classList.add("hidden");
+    if (topInstallBtn) topInstallBtn.classList.add("hidden");
+    showToast("Aplicativo instalado com sucesso!");
+  });
+
+  // 3. Handlers de clique para instalação
+  if (lobbyPwaInstallBtn) {
+    lobbyPwaInstallBtn.addEventListener("click", triggerAppInstall);
+  }
+  if (topInstallBtn) {
+    topInstallBtn.addEventListener("click", triggerAppInstall);
+  }
+
+  // 4. Modal universal de instalação para Celulares e Tablets
+  if (iosModalCloseBtn && iosInstallModal) {
+    iosModalCloseBtn.addEventListener("click", () => {
+      iosInstallModal.classList.add("hidden");
+    });
+    iosInstallModal.addEventListener("click", (e) => {
+      if (e.target === iosInstallModal) {
+        iosInstallModal.classList.add("hidden");
+      }
+    });
+  }
+
+  // 5. Botão de atualizar nova versão
+  if (pwaUpdateBtn) {
+    pwaUpdateBtn.addEventListener("click", () => {
+      if (newWorkerWaiting) {
+        newWorkerWaiting.postMessage({ type: "SKIP_WAITING" });
+      } else {
+        window.location.reload();
+      }
+    });
+  }
+
+  // 6. Monitoramento de status de rede Online / Offline
+  window.addEventListener("online", () => {
+    showToast("Conexão restabelecida!");
+    if (connectionStatusBadge) connectionStatusBadge.classList.add("hidden");
+  });
+
+  window.addEventListener("offline", () => {
+    showToast("Modo offline ativo.");
+  });
+
+  // Mostra o botão de instalação para qualquer celular/tablet quando fora do modo app (standalone)
+  if (isMobileOrTablet() && !isRunningStandalone()) {
+    if (lobbyPwaBanner) lobbyPwaBanner.classList.remove("hidden");
+    if (topInstallBtn) topInstallBtn.classList.remove("hidden");
+  }
+}
+
+function triggerAppInstall() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === "accepted") {
+        console.log("👍 [PWA] Usuário aceitou a instalação");
+        if (lobbyPwaBanner) lobbyPwaBanner.classList.add("hidden");
+        if (topInstallBtn) topInstallBtn.classList.add("hidden");
+      }
+      deferredInstallPrompt = null;
+    });
+  } else if (!isRunningStandalone()) {
+    // Abre o guia universal com instruções claras para Android e iOS
+    if (iosInstallModal) {
+      iosInstallModal.classList.remove("hidden");
+    }
+  } else {
+    showToast("Você já está usando a versão app instalada!");
+  }
+}
+
+function showPwaUpdateBanner() {
+  if (pwaUpdateBanner) {
+    pwaUpdateBanner.classList.remove("hidden");
   }
 }

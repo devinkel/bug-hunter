@@ -691,7 +691,13 @@ const server = http.createServer((req, res) => {
     ".js": "text/javascript; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".svg": "image/svg+xml",
-    ".json": "application/json",
+    ".json": "application/json; charset=utf-8",
+    ".webmanifest": "application/manifest+json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
   };
 
   fs.readFile(filePath, (err, content) => {
@@ -700,7 +706,22 @@ const server = http.createServer((req, res) => {
       res.end("404 Arquivo não encontrado");
       return;
     }
-    res.writeHead(200, { "Content-Type": mimeTypes[ext] || "text/plain" });
+
+    const headers = {
+      "Content-Type": mimeTypes[ext] || "text/plain",
+    };
+
+    // Service worker e manifest nunca devem ficar presos em cache do navegador
+    if (reqPath === "/sw.js") {
+      headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      headers["Service-Worker-Allowed"] = "/";
+    } else if (reqPath === "/manifest.json") {
+      headers["Cache-Control"] = "no-cache, must-revalidate";
+    } else if ([".png", ".svg", ".ico", ".css", ".js"].includes(ext)) {
+      headers["Cache-Control"] = "public, max-age=3600";
+    }
+
+    res.writeHead(200, headers);
     res.end(content);
   });
 });
